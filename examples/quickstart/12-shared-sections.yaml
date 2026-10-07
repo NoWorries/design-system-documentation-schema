@@ -7,9 +7,6 @@ entries:
     id: button
     name: Button
     description: Triggers an action.
-    refs:
-      - to: order-confirmation
-        rel: implements
     sections:
       - kind: guidelines
         for: all
@@ -27,6 +24,9 @@ entries:
           - refs:
               - to: order-confirmation#name-the-order
                 rel: same-as
+    refs:
+      - to: order-confirmation
+        rel: implements
 
   # A pattern, and the rule it owns. Several components follow this one.
   - kind: entry

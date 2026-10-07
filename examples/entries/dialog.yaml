@@ -15,7 +15,7 @@ sections:
       - level: must
         statement: Move focus to the dialog when it opens, and return it to the triggering element when it closes.
       - level: should
-        statement: Dismiss on Escape unless the dialog is blocking on an action the user must explicitly choose.
+        statement: Dismiss on Escape unless the dialog is blocking on an action the user has to choose explicitly.
 
   # A tag-scoped section: every item names `accessibility`, so it sorts after
   # the untagged how-to-use section above it. This is the narrowest tier in

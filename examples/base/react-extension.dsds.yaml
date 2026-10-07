@@ -20,7 +20,7 @@ entries:
         for: all
         items:
           - level: must
-            statement: Icon button must carry an aria-label, since it has no visible text label.
+            statement: Icon button MUST carry an aria-label, since it has no visible text label.
     refs:
       - to: button
         rel: part-of
