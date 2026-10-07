@@ -17,6 +17,7 @@ sections:
         statement: Use for the single primary call-to-action on a surface.
       - level: must-not
         statement: Do not apply to destructive actions - use color.action.danger instead.
+        checkedBy: manual
 
 refs:
   - to: color.action.primary.hover

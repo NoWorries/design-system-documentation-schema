@@ -25,6 +25,7 @@ entries:
         items:
           - level: must
             statement: This design system follows semver; breaking token renames bump the major version.
+            checkedBy: manual
 
   - kind: token
     id: color.action.primary
@@ -69,6 +70,14 @@ entries:
     metadata:
       status: {status: stable}
     sections:
+      # when-to-use leads per STYLE_GUIDE.md §4's breadth sort.
+      - kind: guidelines
+        for: all
+        framing: when-to-use
+        items:
+          - level: should
+            statement: Use for an action that happens in place, like submitting a form or opening a dialog.
+
       # `for: all` precedes `for: human` per STYLE_GUIDE.md §4's audience
       # sort - both sections are how-to-use, so audience breaks the tie.
       - kind: guidelines
@@ -289,6 +298,7 @@ shared:
         items:
           - level: must
             statement: When generating a component, emit the accessible name, keyboard handling, and focus indicator in the first pass. Do not defer them to a follow-up.
+            checkedBy: manual
           # A pure pointer: statement and level both come from the target,
           # so neither is restated here.
           - refs:

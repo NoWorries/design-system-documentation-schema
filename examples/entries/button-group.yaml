@@ -11,9 +11,19 @@ metadata:
 sections:
   - kind: guidelines
     for: all
+    framing: when-to-use
     items:
       - level: should
         statement: Limit to actions a user is choosing between, not an unrelated toolbar of controls.
+      - level: should-not
+        statement: Don't wrap a single action in a group - a lone action is just a button.
+        alternatives:
+          - to: button
+            rel: alternative-to
+
+  - kind: guidelines
+    for: all
+    items:
       - level: may
         statement: Order buttons by how often each action is taken, most frequent first, unless a platform convention dictates otherwise.
 

@@ -10,6 +10,13 @@ entries:
     sections:
       - kind: guidelines
         for: all
+        framing: when-to-use
+        items:
+          - level: should
+            statement: Use for an action the user takes on the current screen, like placing an order.
+
+      - kind: guidelines
+        for: all
         items:
           # Both items are pure pointers - no `statement`, no `level`.
           # Everything comes from the target.
@@ -40,6 +47,7 @@ entries:
           - id: name-the-order
             level: must
             statement: The confirming action names what is being ordered, rather than just saying "OK".
+            checkedBy: manual
 
 shared:
   - id: shared-a11y
@@ -52,3 +60,4 @@ shared:
           - id: touch-target
             level: must
             statement: Minimum touch target 44x44px.
+            checkedBy: assisted

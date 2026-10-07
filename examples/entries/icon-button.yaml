@@ -18,6 +18,18 @@ metadata:
 sections:
   - kind: guidelines
     for: all
+    framing: when-to-use
+    items:
+      - level: should
+        statement: Use when space is tight and the icon is widely recognized on its own, like close, search, or more options.
+      - level: should-not
+        statement: Avoid for an unfamiliar or high-stakes action - a visible label says what will happen.
+        alternatives:
+          - to: button
+            rel: alternative-to
+
+  - kind: guidelines
+    for: all
     items:
       - level: must
         statement: Icon button MUST carry an aria-label, since it has no visible text label.

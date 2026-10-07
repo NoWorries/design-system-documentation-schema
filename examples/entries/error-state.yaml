@@ -29,6 +29,7 @@ sections:
     items:
       - level: must
         statement: Always include a retry action, since the underlying condition is often transient.
+        checkedBy: manual
 
 refs:
   - to: button

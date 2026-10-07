@@ -11,8 +11,21 @@ metadata:
 sections:
   - kind: guidelines
     for: all
+    framing: when-to-use
+    items:
+      - level: should
+        statement: Use to reinforce a text label or mark a status alongside text.
+      - level: should-not
+        statement: Avoid as the only content of something clickable - icon button carries the accessible name and touch target that needs.
+        alternatives:
+          - to: icon-button
+            rel: alternative-to
+
+  - kind: guidelines
+    for: all
     items:
       - level: should
         statement: Pair with a text label unless the glyph's meaning is already established by context (e.g. a close icon inside a dialog's own header).
       - level: must-not
         statement: Do not convey information (like an error state) through color alone - pair with text or a shape change too.
+        checkedBy: manual

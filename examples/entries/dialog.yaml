@@ -11,9 +11,22 @@ metadata:
 sections:
   - kind: guidelines
     for: all
+    framing: when-to-use
+    items:
+      - level: should
+        statement: Use when the user has to decide something or supply input before the current task can continue.
+      - level: should-not
+        statement: Don't build a destructive-action confirmation from a bare dialog - use the confirmation dialog pattern, which already names the consequence.
+        alternatives:
+          - to: confirmation-dialog
+            rel: alternative-to
+
+  - kind: guidelines
+    for: all
     items:
       - level: must
         statement: Move focus to the dialog when it opens, and return it to the triggering element when it closes.
+        checkedBy: manual
       - level: should
         statement: Dismiss on Escape unless the dialog is blocking on an action the user has to choose explicitly.
 

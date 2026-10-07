@@ -187,7 +187,9 @@
     its content via a same-as ref (DSDS-10) is checked against its resolved
     target first, since it inherits `checkedBy` the same way it inherits
     everything else - only flagged if neither the item nor that target
-    declares one.
+    declares one. A same-as ref whose target sits in another document is
+    not flagged: the lint can't see what that target declares, and making
+    the pointer restate it would defeat the pointer.
   note: >-
     DSDS-03 already blocks the narrower case (`checkedBy: automated`
     with no `checks` ref backing it). This is the advisory sibling for

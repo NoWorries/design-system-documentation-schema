@@ -18,9 +18,21 @@ entries:
     sections:
       - kind: guidelines
         for: all
+        framing: when-to-use
+        items:
+          - level: should
+            statement: Use when space is tight and the icon is widely recognized on its own.
+            alternatives:
+              - to: button
+                rel: alternative-to
+
+      - kind: guidelines
+        for: all
         items:
           - level: must
             statement: Icon button MUST carry an aria-label, since it has no visible text label.
+            # assisted: axe's button-name rule flags a missing accessible name.
+            checkedBy: assisted
     refs:
       - to: button
         rel: part-of

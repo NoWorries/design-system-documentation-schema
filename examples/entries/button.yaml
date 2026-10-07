@@ -19,17 +19,20 @@ sections:
         alternatives:
           - to: link
             rel: alternative-to
+        checkedBy: manual
 
   - kind: guidelines
     for: human
     items:
       - level: must
         statement: Use buttons only for in-page actions, never navigation.
+        checkedBy: manual
       # No statement here - this requirement is owned and tracked in the
       # team's own requirements system, not restated in this document. See
       # guidelines.schema.yaml's own $comment for why external-link
       # exempts statement the same way same-as does.
       - level: must
+        checkedBy: manual
         refs:
           - href: https://example.atlassian.net/browse/DS-482
             rel: external-link

@@ -482,16 +482,23 @@ const DOCUMENT_IMPLEMENTATIONS = {
     const entities = entitiesWithPointers(doc);
     const itemsByEntityId = new Map(entities.map(([entity]) => [entity.id, collectItemsById(entity)]));
 
-    // True if some same-as ref on this item resolves (within this document) to a target item
-    // that itself declares checkedBy. A same-as ref to a target with no checkedBy either still
-    // leaves the item unresolved, so it's correctly flagged.
+    // True if some same-as ref on this item defers checkedBy to its target. Two cases:
+    //  - the target is in this document and declares checkedBy: it inherits it.
+    //  - the target's entry isn't in this document at all (a cross-file same-as): this rule
+    //    can't see what the target declares, so it stays silent rather than demanding the
+    //    pointer restate it. Restating it would also mean restating the target's `checks`
+    //    to satisfy DSDS-03 - the duplication the pointer form exists to avoid. Whether the
+    //    target exists is DSDS-05/DSDS-08's job, not this rule's.
+    // A same-as ref to a target in this document with no checkedBy still leaves the item
+    // unresolved, so it's correctly flagged.
     function inheritsCheckedBy(item) {
       return (item.refs || []).some((ref) => {
         if (!ref || ref.rel !== "same-as" || typeof ref.to !== "string") return false;
         const hashIdx = ref.to.indexOf("#");
         if (hashIdx === -1) return false;
         const targetItems = itemsByEntityId.get(ref.to.slice(0, hashIdx));
-        const targetItem = targetItems && targetItems.get(ref.to.slice(hashIdx + 1));
+        if (!targetItems) return true;
+        const targetItem = targetItems.get(ref.to.slice(hashIdx + 1));
         return Boolean(targetItem && targetItem.checkedBy);
       });
     }
@@ -501,7 +508,7 @@ const DOCUMENT_IMPLEMENTATIONS = {
         if ((item.level === "must" || item.level === "must-not") && !item.checkedBy && !inheritsCheckedBy(item)) {
           emit(
             `${at}${p}/checkedBy`,
-            `guideline in "${entity.id}" is a hard requirement (level: ${item.level}) with no checkedBy, and no same-as target in this document that declares one — declare 'automated', 'assisted', or 'manual' so a tool can tell whether this rule is verifiable at all.`,
+            `guideline in "${entity.id}" is a hard requirement (level: ${item.level}) with no checkedBy, and no same-as target that declares one — declare 'automated', 'assisted', or 'manual' so a tool can tell whether this rule is verifiable at all.`,
           );
         }
       });

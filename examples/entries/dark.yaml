@@ -14,6 +14,7 @@ sections:
     items:
       - level: must
         statement: Apply via the root color-scheme attribute, never per-component overrides.
+        checkedBy: manual
       - level: should
         statement: Respect prefers-color-scheme unless the user has set an explicit preference.
 
