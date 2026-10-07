@@ -1479,7 +1479,7 @@ function buildLlmsTxt(entries, version, definitionCount) {
   lines.push("## Machine-readable schema");
   lines.push("");
   lines.push(
-    `- [manifest.json](${SITE_URL}/manifest.json): the typed machine index — every entity kind, the block kinds it accepts, and links to its page/markdown/schema/example. Start here.`,
+    `- [manifest.json](${SITE_URL}/manifest.json): the typed machine index — every entry kind and section kind, with links to each one's page, markdown and schema. Start here.`,
   );
   lines.push(
     `- [Bundled schema, v${version}](${SITE_URL}/v${version}/dsds.bundled.yaml): every definition in one file`,
@@ -1487,7 +1487,7 @@ function buildLlmsTxt(entries, version, definitionCount) {
   // The curated index used to send every agent to the 115 KB whole-schema mirror and never
   // mention the small ones, so the cheap route existed but nothing pointed at it.
   lines.push(
-    `- [Per-definition markdown](${SITE_URL}/manifest.json): ${definitionCount} small files, one per ` +
+    `- **Per-definition markdown**: ${definitionCount} small files, one per ` +
       `schema definition, a few KB each and in the schema's own field order — e.g. ` +
       `[entries-component](${SITE_URL}/schema/entries-component.md) or ` +
       `[common-ref](${SITE_URL}/schema/common-ref.md). Fetch one of these to learn a single ` +
@@ -1616,10 +1616,15 @@ function buildManifest(pages, version) {
     definitions,
     // dsds-mcp@0.4.0 added real 0.20.0 support (auto-detects document format instead of
     // hard-checking the renamed dsdsVersion field, which made 0.3.0 reject every valid document).
-    // minVersion is the floor this repo has actually tested.
+    // minVersion is the floor this repo has actually tested. schemaVersions is the range of
+    // DSDS schema versions that floor validates correctly: 0.20.0 is the release it was built
+    // for, and 0.21.2 was checked directly (it enforces 0.21.0's required `traitType`). The
+    // upper bound stops short of 0.22, which is planned as a breaking release - re-test and
+    // widen this when it ships.
     mcp: {
       package: "dsds-mcp",
       minVersion: "0.4.0",
+      schemaVersions: ">=0.20.0 <0.22.0",
       install: "npx dsds-mcp",
     },
     indexes: {

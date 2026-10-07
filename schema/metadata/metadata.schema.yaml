@@ -22,7 +22,7 @@ properties:
   context:
     type: string
     description: Why this entry was created, and how and why to use it.
-    example: Introduced to give provide agents extra information for how to ingest/use an entry.
+    example: Introduced to give agents extra information for how to ingest/use an entry.
   origin:
     type: object
     description: How this entry's documentation came to exist, and who or what wrote it.

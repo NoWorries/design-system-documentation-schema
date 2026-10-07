@@ -167,7 +167,7 @@ Use `npm run bump-version <version> -- --dry-run` to preview changes first, or `
 
 The versioned dist directories (`site/dist/v<n>/dsds.bundled.schema.json` and `dsds.bundled.yaml`) are **immutable public contracts**. Older `v<n>/` directories must stay untouched, and they are the one part of `site/dist/` that is tracked in git. `scripts/site/build-site.js` preserves them across rebuilds and never regenerates an older one, so nothing else would put them back.
 
-Tag every release (`vX.Y.Z`, pushed to the remote) once its commit is merged — a released version with no tag is indistinguishable from a work-in-progress one to anything that resolves "latest" by walking tags (`dsds-mcp`'s staleness check is one real example). Releases through v0.15.2 did this consistently; if the working tree is currently untagged past that point, tag it before cutting anything new so tag history stops having a gap.
+Tag every release (`vX.Y.Z`, pushed to the remote) once its commit is merged — a released version with no tag is indistinguishable from a work-in-progress one to anything that resolves "latest" by walking tags (`dsds-mcp`'s staleness check is one real example).
 
 ### Bundle format
 

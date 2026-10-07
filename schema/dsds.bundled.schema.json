@@ -741,6 +741,23 @@
         "name",
         "description"
       ],
+      "if": {
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "const": "token"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "id": {
+            "$ref": "https://designsystemdocspec.org/v0.21.2/common/id.schema.yaml"
+          }
+        }
+      },
       "properties": {
         "kind": {
           "description": "What kind of thing this entry is, as a real design-system artifact: one of the 5 well-known kinds, or a namespaced custom kind.",
@@ -767,7 +784,7 @@
         "id": {
           "type": "string",
           "description": "This entry's unique id in the design system graph.",
-          "$comment": "Every ref that points at it uses this. A token entry's id uses a looser pattern (see entries/token.schema.yaml). Every other kind uses common/id.schema.yaml's standard pattern.",
+          "$comment": "Every ref that points at it uses this. A token entry's id uses a looser pattern (see entries/token.schema.yaml). Every other kind, including a namespaced custom kind, uses common/id.schema.yaml's standard pattern - enforced by the `if`/`else` at the top of this file, not here.",
           "example": "button"
         },
         "name": {
@@ -1204,7 +1221,7 @@
         "context": {
           "type": "string",
           "description": "Why this entry was created, and how and why to use it.",
-          "example": "Introduced to give provide agents extra information for how to ingest/use an entry."
+          "example": "Introduced to give agents extra information for how to ingest/use an entry."
         },
         "origin": {
           "type": "object",
@@ -1590,7 +1607,7 @@
                       "assisted",
                       "manual"
                     ],
-                    "description": "How this rule is own verified.",
+                    "description": "How this rule is verified.",
                     "$comment": "`automated`: a tool checks this on its own. Point `checks` (rel: test, lint-rule, agent-test - ex: a promptfoo config) at the real tool that's doing the checking.\n`assisted`: a tool flags likely cases, but a person makes the call.\n`manual`: a person checks this by hand, no tool involved. Leave this out if you don't know yet how it'll be checked."
                   },
                   "tags": {

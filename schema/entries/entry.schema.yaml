@@ -23,6 +23,19 @@ $comment: >-
   document's `shared` list instead.
 
 required: [id, kind, name, description]
+# Every kind but `token` takes the standard id pattern. It can't sit on `id`
+# itself: token.schema.yaml composes this file with allOf, so a pattern here
+# would AND with tokenId and reject the capitalized and slash-separated ids
+# a token is allowed (`Color/Action/Primary`).
+if:
+  required: [kind]
+  properties:
+    kind:
+      const: token
+else:
+  properties:
+    id:
+      $ref: https://designsystemdocspec.org/v0.21.2/common/id.schema.yaml
 properties:
   kind:
     description: "What kind of thing this entry is, as a real design-system artifact: one of the 5 well-known kinds, or a namespaced custom kind."
@@ -39,8 +52,10 @@ properties:
     description: This entry's unique id in the design system graph.
     $comment: >-
       Every ref that points at it uses this. A token entry's id uses a
-      looser pattern (see entries/token.schema.yaml). Every other kind
-      uses common/id.schema.yaml's standard pattern.
+      looser pattern (see entries/token.schema.yaml). Every other kind,
+      including a namespaced custom kind, uses common/id.schema.yaml's
+      standard pattern - enforced by the `if`/`else` at the top of this
+      file, not here.
     example: button
   name:
     type: string

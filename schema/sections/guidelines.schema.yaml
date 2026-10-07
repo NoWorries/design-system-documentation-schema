@@ -120,7 +120,7 @@ allOf:
             checkedBy:
               type: string
               enum: [automated, assisted, manual]
-              description: How this rule is own verified.
+              description: How this rule is verified.
               $comment: >-
                 `automated`: a tool checks this on its own. Point
                 `checks` (rel: test, lint-rule, agent-test - ex: a

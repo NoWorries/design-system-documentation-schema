@@ -51,13 +51,9 @@ binding.
   same anchor manifest.json's `entries`/`sections` arrays already use) is
   the same content for that one definition alone, usually a few KB.
 - **MCP server** — `dsds-mcp` on npm wraps the schema and validation as MCP
-  tools. `0.4.0` added real 0.20.0 support: `dsds_validate` auto-detects a
-  document's format (0.20.0 YAML vs. legacy 0.15.2 JSON) rather than
-  hard-checking the `dsdsVersion` field 0.20.0 renamed to `schemaVersion`,
-  which is what made every earlier build reject every valid 0.20.0
-  document. Run `npx dsds-mcp` (`minVersion: "0.4.0"`, per manifest.json's
-  `mcp` field) — or validate directly against the bundled schema or
-  `scripts/validate/validate.js` either way.
+  tools. Run `npx dsds-mcp` (version floor in manifest.json's `mcp` field),
+  or validate directly against the bundled schema or
+  `scripts/validate/validate.js`.
 
 ## The words this spec uses
 
