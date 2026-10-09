@@ -184,7 +184,7 @@ ul {
 /* Blockquotes / notes */
 blockquote {
     border-inline-start: 1px solid var(--ds-color-accent);
-    background: var(--ds-color-accent-subtle);
+    background: var(--ds-color-bg-raised);
     padding: var(--ds-space-4) var(--ds-space-8);
     margin-bottom: var(--ds-space-8);
     font-size: 0.9375rem;

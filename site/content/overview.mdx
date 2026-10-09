@@ -51,7 +51,7 @@ sections:
 
 ### What a docs site shows
 
-The sections written for people (`for: human`) and for everyone (`for: all`):
+The sections written for people (`for: human`) and everything (`for: all`):
 
 > **Button**
 >
@@ -69,12 +69,15 @@ The sections written for people (`for: human`) and for everyone (`for: all`):
 
 ### What an agent reads
 
-All of it, plus a note no person ever sees. The `for: agent` section is there for the mistake agents make and people don't:
+Agents can be given their own specific documentation with a `for: agent` section to guide agents with things only they need:
 
 ```yaml
-- level: must-not
-  statement: Do not build a button from a div with a click handler.
-  checkedBy: assisted
+- kind: guidelines
+  for: agent
+  items:
+    - level: must-not
+      statement: Do not build a button from a div with a click handler.
+      checkedBy: assisted
 ```
 
 ### What the linter reports
