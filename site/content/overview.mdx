@@ -1,15 +1,15 @@
 ---
 title: "Design system doc spec {{VERSION}}"
 slug: index
-description: "DSDS is a YAML format for design system documentation: one file a docs site renders, an agent reads and a linter checks. DTCG describes values, CEM describes APIs, DSDS describes how, when and why."
+description: "DSDS is a schema for design system documentation. It's open, portable, and (debatedly) simple."
 ---
 
 # Design system doc spec {{VERSION}}
 
-**DTCG describes values. CEM describes APIs. DSDS describes how, when and why.**
+**Design system documentation is better when it's portable, structured, and connected. DSDS works to make all three possible.**
 
 **Draft Specification:**
-This is a draft. It can still change—and has done so in dramatic fashion. No standards body has endorsed it. We welcome feedback and contributions on GitHub.
+This is a draft. It can still change—and has done so. No standards body has endorsed it. We welcome feedback and contributions on GitHub.
 
 * **Latest version:** [GitHub repo](https://github.com/somerandomdude/design-system-documentation-schema)
 * **Feedback:** [GitHub Issues](https://github.com/somerandomdude/design-system-documentation-schema/issues)
@@ -92,14 +92,37 @@ The labeling rule is a `must`, but nothing says how anyone would check it. Add `
 
 ---
 
-## Humans and agents
+## Connected documentation
 
-A DSDS document has two readers: people and AI agents. Both are served by the same file. Every section carries a `for` field naming its audience:
+A design system is a set of connected pieces. A dialog is built from a button, a button uses color tokens, and many components follow the same rules. DSDS lets things connect, so those links are data rather than copy/paste-waste.
 
-- **`for: human` or `for: all`**: Everything a person needs—definitions, guidelines, steps, freeform narrative. Agents read these too.
-- **`for: agent`**: Agent-only notes—for the times when basic documentation can't get through those thick titanium skulls. This allows you to write documentation specifically for agent misunderstandings, hallucinations, or agent-specific tasks.
+```yaml
+kind: component
+id: dialog
+name: Dialog
+description: A window over the page that asks for a decision before the person can go on.
+sections:
+  - kind: guidelines
+    for: all
+    items:
+      - refs:
+          - to: shared-a11y#focus-visible
+            rel: same-as
+uses:
+  - to: button
+  - to: color.surface.raised
+alternatives:
+  - to: popover
+refs:
+  - href: https://www.figma.com/design/abc123/Dialog
+    rel: design
+  - href: https://storybook.example.com/?path=/story/dialog
+    rel: demo
+```
 
-Write for people by default. It serves agents too. Use `for: agent` when all else fails.
+Because the links are data, a docs site can show what's related, an agent can check what a change would affect, and a rule shared by many components is written once and reused instead of copied.
+
+→ **[common/ref](schema.html#common-ref)** lists every kind of link, what it means, and where it goes.
 
 ---
 
@@ -112,6 +135,15 @@ DSDS sits above them and documents meaning and usage. **If another format owns a
 → **[Interoperability](interoperability.html)** covers every format DSDS is built to sit alongside, the field that points at each, and a worked example for all of them.
 
 ---
+
+## For humans and agents
+
+A DSDS document has two readers: people and AI agents. Both are served by the same file. Every section carries a `for` field naming its audience:
+
+- **`for: human` or `for: all`**: Everything a person needs—definitions, guidelines, steps, freeform narrative. Agents read these too.
+- **`for: agent`**: Agent-only notes—for the times when basic documentation can't get through those thick titanium skulls. This allows you to write documentation specifically for agent misunderstandings, hallucinations, or agent-specific tasks.
+
+Write for people by default and use `for: agent` when all else fails.
 
 ## How a document is built
 
