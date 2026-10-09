@@ -48,7 +48,7 @@ Pre-1.0 breaking changes land batched into a named release, not trickled one fie
 
 **0.21.0 was a breaking window, and it is now closed.** It changed one shape — a component trait — and it changed it twice: `traitType` became required, and `setBy` was removed. Both landed in the same release rather than one per minor, which is what "batched" means here, and `scripts/tools/migrate-to-0.21.js` handles both in a single pass. There was no deprecation window first; pre-1.0 that is allowed, and it is the commitment this page makes above. 0.20.0 was the previous window, replacing the entity/`documentBlocks` model.
 
-**0.22.0 is the next breaking window, and the last one planned before 1.0.** It simplifies the format rather than adding to it. Decided so far:
+**0.22.0 was a breaking window, and it is now closed.** It's the last one planned before 1.0. It simplifies the format rather than adding to it:
 
 - `purpose` (on entries, traits and trait values) and `metadata.context` fold into `description`, so there's one place to say why something exists.
 - A section no longer carries `metadata`.
@@ -59,12 +59,11 @@ Pre-1.0 breaking changes land batched into a named release, not trickled one fie
 - `replaces` becomes `replacedBy`, inside the deprecated thing's `status`, next to its `deprecationNotice`.
 - A single trait value can be deprecated, with its own `status` naming `button#variant.primary` in `replacedBy`.
 - `dsds-format` puts fields in the style guide's order, replacing the four lint rules that reported it (`DSDS-17`, `DSDS-20`, `DSDS-22`, `DSDS-23`, now retired).
-
 - The pointer fields stay, but each means one `rel`, so a pointer in it has no `rel` of its own. Entry `related` becomes `alternatives`; guideline `related` becomes `refines` on the agent rule; a checklist step is listed in the guideline's `checks` instead of pointing at it.
-- `rel` goes from 20 values to 14. `test`, `lint-rule` and `agent-test` become `checked-by`, with the kind of check in `role`; `external-link` becomes `cites` or `relates-to`; `storybook` becomes `demo`; `package` becomes `source`; `see-also`, `pairs-with` and `excludes` become `relates-to`.
+- `rel` goes from 23 values to 14. `test`, `lint-rule` and `agent-test` become `checked-by`, with the kind of check in `role`; `external-link` becomes `cites` or `relates-to`; `storybook` becomes `demo`; `package` becomes `source`; `see-also`, `pairs-with` and `excludes` become `relates-to`.
 - `rel: file` is only for DSDS documents. A code file or DTCG token file is `rel: source`. A token's or theme's `source` and a component's `sourceFiles[].file` take no `rel`.
 
-`scripts/tools/migrate-to-0.22.js` covers everything in the decided list, and will grow to cover the rest in one pass. After 0.22.0, the plan is additive releases (new optional fields, new fixtures, restored tooling) until the 1.0 criteria below are met.
+`scripts/tools/migrate-to-0.22.js` covers all of it in one pass. From here, the plan is additive releases (new optional fields, new fixtures, restored tooling) until the 1.0 criteria below are met.
 
 ## How schema changes get made
 

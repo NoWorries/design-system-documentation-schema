@@ -63,7 +63,7 @@ allOf:
                 example: Confirm
             uses:
               $ref: https://designsystemdocspec.org/v0.22.0/common/ref.schema.yaml#/$defs/targets
-              description: "Entries this item is about or needs, like the components a step involves (uses). No `rel`: this field says it."
+              description: "Entries this item relates to, like the components a step involves (uses)."
               example:
                 - to: button
             refs:

@@ -538,7 +538,7 @@ Each statement's id is based on where it lives (`<dir>/<file>§<jsonPath>.<n>`).
 
 #### common/ref
 
-- **MUST NOT** — A conforming consumer derives the reverse direction and MUST NOT require it to be written on the target as well. <small>`common/ref§rel.1`</small>
+- **MUST NOT** — A conforming consumer works out the reverse direction itself, and MUST NOT require it to be written on the target as well. <small>`common/ref§rel.1`</small>
 - **MUST** — Where an object has a field named for a kind of pointer, that kind MUST go in the field, not in `refs` (DSDS-25). <small>`common/ref§rel.2`</small>
 
 ### entries

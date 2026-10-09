@@ -1674,17 +1674,14 @@ function buildManifest(pages, version) {
     bundledSchema: `${SITE_URL}/v${version}/dsds.bundled.yaml`,
     // Prefer one of these over bundledSchema when you only need a single definition.
     definitions,
-    // dsds-mcp@0.4.0 added real 0.20.0 support (auto-detects document format instead of
-    // hard-checking the renamed dsdsVersion field, which made 0.3.0 reject every valid document).
-    // minVersion is the floor this repo has actually tested. schemaVersions is the range of
-    // DSDS schema versions that floor validates correctly: 0.20.0 is the release it was built
-    // for, and 0.21.2 was checked directly (it enforces 0.21.0's required `traitType`). The
-    // upper bound stops short of 0.22, which is planned as a breaking release - re-test and
-    // widen this when it ships.
+    // minVersion is the first dsds-mcp release that reads this schema version. dsds-mcp@0.5.0
+    // vendors the 0.22.0 schema and runs this repo's own validator, so it reads 0.22.x only:
+    // 0.22.0 is breaking, and a 0.21 document fails until it's migrated. dsds-mcp@0.4.0 reads
+    // 0.20.x and 0.21.x. Re-test and update this with every schema release.
     mcp: {
       package: "dsds-mcp",
-      minVersion: "0.4.0",
-      schemaVersions: ">=0.20.0 <0.22.0",
+      minVersion: "0.5.0",
+      schemaVersions: ">=0.22.0 <0.23.0",
       install: "npx dsds-mcp",
     },
     indexes: {
