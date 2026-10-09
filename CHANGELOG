@@ -10,6 +10,19 @@ Breaking release. It simplifies the format rather than adding to it: one place t
 
 Tested at scale on Sanity UI's documentation (122 files, 230 entries): the migration script did nearly all of it, a handful of pointers needed a person, and the result validates with no errors or warnings.
 
+**Summary:**
+- `purpose` and `metadata.context` are folded into description. There’s now one place to say what an entry is and why it exists.
+- `uses` replaces `composes`, `depends-on`, `part-of` and `implements`.
+- Pointers in fields named for their kind no longer take a rel, because the field says it. That covers `uses`, `extends`, `alternatives`, `specs`, `evidence`, `checks`, `refines`, `replacedBy`, a token’s or theme’s `source`, and `sourceFiles[].file`.
+- An entry’s `related` is now `alternatives`, which contains pointers to entries that are typically used instead.
+- `rel` values are cut from 23 to 14.
+- A deprecated entry, trait or trait value names its successor in `replacedBy`, inside its `status`. Single trait values can now be deprecated.
+- `rel: file` is now for DSDS documents only. Code and token files are `rel: source`.
+- New `metadata.sourceRoot` on a system entry sets where relative sourceFiles paths start.
+- Sections no longer have `metadata`.
+- Entry ids are now checked against the id pattern.
+- New dsds-format tool puts fields in the style guide’s order, replacing four lint rules.
+
 ### Breaking
 
 - **One place to say why.** `purpose` is gone from entries, component traits and trait values, and `metadata.context` is gone from every `metadata` object. All three answered the question `description` already asks. The migration script appends their text to `description` and reports each one, so you can tighten the result. A leftover `purpose` or `metadata.context` fails validation on every well-known kind except `kind: entry`, where `DSDS-24` reports it as a warning.
