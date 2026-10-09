@@ -89,7 +89,7 @@ A profile file needs its own `$id`, different from the schema it's narrowing —
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: https://your-org.example/profiles/entries/component.schema.yaml
 title: Acme's stable-component profile
-description: Once a component's status is stable, it must have a purpose and at least one source file.
+description: Once a component's status is stable, it must have documentation sections and at least one source file.
 allOf:
   - $ref: https://designsystemdocspec.org/v{{VERSION}}/entries/component.schema.yaml
   - if:
@@ -103,7 +103,7 @@ allOf:
               properties:
                 status: {const: stable}
     then:
-      required: [purpose, sourceFiles]
+      required: [sections, sourceFiles]
 ```
 
 This is the most useful form of profile: *if the status is stable, then require these fields.* It works on anything with a lifecycle field — a component, a token, a theme — and turns "is the documentation complete?" from a question someone has to remember to ask into something the build checks automatically.

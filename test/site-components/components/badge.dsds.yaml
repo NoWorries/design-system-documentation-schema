@@ -16,7 +16,6 @@ sections:
         statement: Use to label an entry's kind, status, or experimental state (the roles its three variants exist for). For a plain keyword or category label with no built-in meaning, use tag instead.
         alternatives:
           - to: tag
-            rel: alternative-to
         checkedBy: manual
 
   - kind: guidelines
@@ -26,16 +25,9 @@ sections:
         statement: The variant icon is decorative and MUST stay aria-hidden — its meaning is always paired with adjacent visible text, never conveyed by color/icon alone.
         checks:
           - href: ../../../scripts/checks/axe-audit.mjs
-            rel: test
+            role: test
         checkedBy: automated
 
-refs:
-  - to: def-section
-    rel: part-of
-    note: Renders the type badge next to each schema definition's heading.
-  - to: prop-list
-    rel: part-of
-    note: Renders the "at least one required" conditional marker on a prop row.
 
 
 sourceFiles:

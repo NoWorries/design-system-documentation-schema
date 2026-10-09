@@ -18,7 +18,7 @@ const fs = require("fs");
 const path = require("path");
 const yaml = require("js-yaml");
 
-const TARGET_VERSION = "0.21.2";
+const TARGET_VERSION = "0.22.0";
 // common/id.schema.yaml's own base pattern, used to sanity-check a value that's supposed to
 // be an id before emitting a `to:` ref from it - some 0.15.2 fields were authored as free text.
 const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*(\.[a-z0-9]+(-[a-z0-9]+)*)*$/;
@@ -31,9 +31,17 @@ let DISSOLVED_GROUP_IDS = new Set();
 // Relationship / link → ref
 // ---------------------------------------------------------------------------
 
-// Old link `kind` values with a direct 0.20.0 `rel` equivalent; anything else becomes
-// `external-link` with the original kind preserved as `role`.
-const LINK_KIND_TO_REL = { source: "source", design: "design", storybook: "storybook", package: "package" };
+// Old link `kind` values with a direct `rel` equivalent; anything else becomes `relates-to`
+// with the original kind preserved as `role`. (0.22.0 merged `storybook` into `demo`, `package`
+// into `source`, and a plain `external-link` into `relates-to`.)
+const LINK_KIND_TO_REL = { source: "source", design: "design", storybook: "demo", package: "source" };
+
+// 0.22.0 merged four relations into `uses`, and flipped two to be written on the other end:
+// `x part-of y` is `y uses x`, and `new replaces old` is `old replaced-by new`. The flips are
+// applied in migrateDoc(), once every entry exists to receive them.
+const RELATION_TO_REL = { composes: "uses", "depends-on": "uses", implements: "uses" };
+const FLIPPED_RELATIONS = { "part-of": "uses", replaces: "replaced-by" };
+let PENDING_FLIPS = new Map(); // ref object -> new rel, written on the target instead
 
 function migrateRefs(old, report, label) {
   const refs = [];
@@ -42,17 +50,18 @@ function migrateRefs(old, report, label) {
       report.manual.push(`${label}: a relationship with no target/relation was dropped`);
       continue;
     }
-    const ref = { to: rel.target, rel: rel.relation };
+    const ref = { to: rel.target, rel: RELATION_TO_REL[rel.relation] || rel.relation };
     if (rel.role) ref.note = rel.role;
+    if (FLIPPED_RELATIONS[rel.relation]) PENDING_FLIPS.set(ref, FLIPPED_RELATIONS[rel.relation]);
     refs.push(ref);
   }
   const links = (old.metadata && old.metadata.links) || [];
   for (const link of links) {
     if (typeof link.url !== "string") continue;
-    const rel = LINK_KIND_TO_REL[link.kind] || "external-link";
+    const rel = LINK_KIND_TO_REL[link.kind] || "relates-to";
     const ref = { href: link.url, rel };
-    if (rel === "external-link" && link.kind) ref.role = link.kind;
-    if (link.label && rel !== "external-link") ref.role = link.label;
+    if (rel === "relates-to" && link.kind) ref.role = link.kind;
+    if (link.label && rel !== "relates-to") ref.role = link.label;
     refs.push(ref);
   }
   return refs;
@@ -121,7 +130,10 @@ function migrateMetadata(old, report, label) {
     const o = typeof m.docOrigin === "string" ? { method: m.docOrigin } : m.docOrigin;
     out.origin = {};
     if (o.method) out.origin.method = o.method;
-    if (o.author) out.origin.author = o.author;
+    // 0.22.0 cut `author` to three values; the AI-or-script half of the old ones goes in `note`.
+    const AUTHOR_MAP = { "ai-assisted": "assisted", "machine-assisted": "assisted", "ai-generated": "generated", "machine-generated": "generated" };
+    if (o.author) out.origin.author = AUTHOR_MAP[o.author] || o.author;
+    if (AUTHOR_MAP[o.author]) report.manual.push(`${label}: docOrigin.author "${o.author}" became "${AUTHOR_MAP[o.author]}" - say in origin.note whether it was an AI model or a script, if that matters`);
     if (o.note) out.origin.note = o.note;
   }
 
@@ -157,14 +169,14 @@ function migrateGuidelineItem(old, report, label) {
   if (Array.isArray(old.references) && old.references.length) {
     item.evidence = old.references
       .filter((r) => r && typeof r.url === "string")
-      .map((r) => ({ href: r.url, rel: "external-link", ...(r.label ? { note: r.label } : {}) }));
+      .map((r) => ({ href: r.url, ...(r.label ? { note: r.label } : {}) }));
   }
 
   if (Array.isArray(old.criteria) && old.criteria.length) {
     const [first, ...rest] = old.criteria;
     if (first.verification) item.checkedBy = first.verification;
     if (first.check && typeof first.check === "object" && first.check.target) {
-      item.checks = [{ href: first.check.target, rel: "test" }];
+      item.checks = [{ href: first.check.target, role: "test" }];
     }
     if (rest.length) {
       report.manual.push(`${label}: guideline had ${old.criteria.length} criteria - 0.20.0 has one checkedBy per item, only the first was kept`);
@@ -198,7 +210,7 @@ function migrateBlock(block, sections, traits, entry, report, label, forAudience
         };
         if (u.alternative && u.alternative.identifier) {
           if (ID_PATTERN.test(u.alternative.identifier)) {
-            item.alternatives = [{ to: u.alternative.identifier, rel: "alternative-to" }];
+            item.alternatives = [{ to: u.alternative.identifier }];
           } else {
             item.$extensions = { "com.dsds.migration": { alternative: u.alternative.identifier } };
             report.manual.push(`${label}: use-case alternative "${u.alternative.identifier}" isn't id-shaped (probably free text in the source) - can't become a \`to:\` ref, kept in $extensions`);
@@ -369,7 +381,21 @@ function migrateEntity(old, report) {
     }
   }
 
-  const refs = migrateRefs(old, report, label);
+  // 0.22.0: `extends` and `alternative-to` have fields of their own on an entry, and a pointer
+  // there carries no `rel`.
+  const allRefs = migrateRefs(old, report, label);
+  const OWN_FIELD = { extends: "extends", "alternative-to": "alternatives" };
+  const refs = [];
+  for (const ref of allRefs) {
+    const field = OWN_FIELD[ref.rel];
+    if (!field) {
+      refs.push(ref);
+      continue;
+    }
+    const { rel, ...rest } = ref;
+    entry[field] = [...(entry[field] || []), rest];
+    if (PENDING_FLIPS.has(ref)) PENDING_FLIPS.set(rest, PENDING_FLIPS.get(ref));
+  }
   if (refs.length) entry.refs = refs;
 
   const sections = [];
@@ -408,6 +434,7 @@ function systemEntryFrom(systemInfo, report) {
 
 function migrateDoc(old, report) {
   DISSOLVED_GROUP_IDS = new Set();
+  PENDING_FLIPS = new Map();
   const entries = [];
 
   // Root-level documentBlocks/agentDocumentBlocks have nowhere to live at the 0.20.0 document
@@ -443,6 +470,29 @@ function migrateDoc(old, report) {
 
   for (const oldEntity of oldEntities) {
     entries.push(...migrateEntity(oldEntity, report));
+  }
+
+  // Flip part-of/replaces onto the entry they pointed at. One that points outside this document
+  // keeps its old relation, so validation fails on it rather than it passing with a wrong meaning.
+  const byId = new Map(entries.map((e) => [e.id, e]));
+  for (const entry of entries) {
+    for (const ref of [...(entry.refs || [])]) {
+      const newRel = PENDING_FLIPS.get(ref);
+      if (!newRel) continue;
+      const target = byId.get(ref.to);
+      if (!target) {
+        report.manual.push(`"${entry.id}" ${ref.rel} "${ref.to}": "${ref.to}" isn't in this document. Write {to: ${entry.id}, rel: ${newRel}} on "${ref.to}" and remove this ref (0.22.0 writes this relation on the other end)`);
+        continue;
+      }
+      entry.refs = entry.refs.filter((r) => r !== ref);
+      if (!entry.refs.length) delete entry.refs;
+      const already = (target.refs || []).some((r) => r.to === entry.id && (r.rel === newRel));
+      if (!already) {
+        const flipped = { to: entry.id, rel: newRel };
+        if (ref.note) flipped.note = ref.note;
+        target.refs = [...(target.refs || []), flipped];
+      }
+    }
   }
 
   if (DISSOLVED_GROUP_IDS.size) {

@@ -1,8 +1,7 @@
 kind: component
-# Valid but wrong: `evidence` (rel: external-link) is the field built to
-# tie an accessibility rule to the specific WCAG criterion it follows,
-# and `checks` (rel: test) is the field built to point at the test that
-# proves it, yet the guidelines item schema requires neither (only
+# Valid but wrong: `evidence` is the field built to tie an accessibility
+# rule to the specific WCAG criterion it follows, and `checks` is the
+# field built to point at the test that proves it, yet the guidelines item schema requires neither (only
 # `level` plus a `statement`). A bare "conforms to WCAG 2.1 AA"
 # statement therefore validates with no criterion named and no test
 # attached, so a developer reading it learns that the author claimed

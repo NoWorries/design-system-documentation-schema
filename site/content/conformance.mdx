@@ -1,53 +1,62 @@
 ---
 title: "Conformance — DSDS {{VERSION}}"
 slug: conformance
-description: "What it means for a document to follow the DSDS spec: the four conformance classes, the three enforcement tiers, and every rule the validator enforces."
+description: "What it means to follow the DSDS spec: the four kinds of conforming thing, the three ways a rule is checked, and every rule."
 ---
 
 # Conformance
 
-What it means for a document to follow the DSDS spec: every rule it enforces, and how each one is checked. For what might still change before 1.0, see [Stability](stability.html). For how the schema itself is organized — the building blocks every entry, section, and reference is built from — see [How the schema is organized](schema.html#how-the-schema-is-organized).
+What it means to follow the DSDS spec, every rule that's checked, and how each one is checked. For what could still change before 1.0, see [Stability](stability.html). For how the schema is put together, see [How the schema is organized](schema.html#how-the-schema-is-organized).
 
-The words **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** have a specific meaning on this page and inside the DSDS schema files, as defined by [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) (updated by [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174)). They only carry that meaning when written in capital letters.
+**MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT** and **MAY** have a set meaning on this page and in the DSDS schema files. It's the meaning [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) gives them, as updated by [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174), and only when they're written in capitals.
 
 ## Where the rules live
 
-DSDS keeps its rules inside the schema's own `description` text, next to the field they apply to — the schema *is* the spec, with no separate rulebook to keep in sync. The [index of every normative statement](#index-of-every-normative-statement) below regenerates from the schema on every build, so it can't drift out of date. Each rule has a location-based ID (for example, `common/ref§note.1`) — if that ID changes, the schema moved, and the rule should be double-checked wherever it's cited.
+Rules about a single field live in the schema, in that field's `description`. The [index of every requirement](#index-of-every-normative-statement) at the end of this page is rebuilt from the schema on every build, so it can't go out of date. The [Specification](specification.html) puts them together in numbered sections. Each requirement there names the schema file, rule or test vector that checks it, and `npm run check` makes sure it does.
+
+Each requirement in the index has an id based on where it lives, such as `common/ref§note.1`. If that id changes, the schema moved, and anywhere that cites the requirement should be checked.
 
 ## Conformance classes
 
-DSDS defines four ways something can "follow the spec" — a document, and the tools that create, read, and check it. State which one you mean.
+"Follows the spec" can mean four different things: a document, or a tool that writes, reads or checks one. Say which one you mean.
 
 ### Conforming document
 
-A document that passes schema validation for the version named in its `schemaVersion`, **and** the extra rules below (`DSDS-01` through `DSDS-11`) that a schema file alone can't check. Passing schema validation on its own isn't enough.
+A document that passes the schema for the version in its `schemaVersion`, **and** passes the rules in the [rule catalog](#rule-details) that the schema can't check on its own. Passing the schema alone isn't enough.
 
 ### Conforming producer
 
-A tool or person that creates DSDS documents. A conforming producer:
+A tool or a person that writes DSDS documents. A conforming producer:
 
-- MUST only create documents that follow the spec
-- MUST NOT use an outdated field or structure in new documents (old ones are kept around only so existing documents keep working)
-- SHOULD record how a document was created, using `metadata.origin`
+- MUST only write documents that follow the spec.
+- MUST NOT use an outdated field or structure in a new document. Old ones are only kept so existing documents keep working.
+- SHOULD record how a document was made, in `metadata.origin`.
 
 ### Conforming consumer
 
-A tool, renderer, or AI agent that reads DSDS documents. A conforming consumer:
+A tool, a renderer or an AI agent that reads DSDS documents. A conforming consumer:
 
-- MUST NOT fail just because it sees an optional field it doesn't recognize
-- MUST keep `$extensions` data intact even if it doesn't understand it
-- MUST treat an unresolvable reference (an `entryId#itemId` pointing nowhere) as an error, not silently ignore it
-- MUST take MUST/SHOULD-style guidance as seriously as the spec says to, **for a document it has already decided to trust** — a `must-not` guideline is a hard stop for an agent writing code, not a suggestion. This does not extend that same standing to an unvetted or third-party document; see [Security considerations](security.html) for what that trust decision covers and doesn't
-- SHOULD build its own "what points to what" index when it loads a document, rather than expect the document to store that answer directly
-- MUST be able to address every section item, whether or not it was written with an `id` — when one is missing, derive it from the item's own text (lowercase, non-alphanumeric runs collapsed to a dash), the same way every other conforming tool does. See [common/id](schema.html#common-id).
+- MUST NOT fail just because it finds an optional field it doesn't recognize.
+- MUST keep `$extensions` data, even when it doesn't understand it.
+- MUST report a reference that points at nothing, such as an `entryId#itemId` with no target, instead of quietly ignoring it. The [processing model, §3](processing.html#3-projects) says when that's an error and when it's a warning.
+- MUST take the document's rules as seriously as their `level` says, **for a document it has already decided to trust**. For an agent writing code, a `must-not` guideline is a hard stop, not a suggestion. That doesn't extend to a document from an unknown or untrusted source. [Security considerations](security.html) explains what that trust decision covers.
+- SHOULD work out "what points at what" itself when it loads a document, instead of expecting the document to store the answer.
+- MUST be able to address every section item, whether or not it has an `id`. When one is missing, it makes the id from the item's own text, the same way every other conforming tool does. See the [processing model, §2](processing.html#2-addresses).
 
 ### Conforming validator
 
-A tool that checks documents. A conforming validator MUST enforce both the schema itself (with format checks on) and the extra rules below (`DSDS-01`–`DSDS-11`). `scripts/validate/validate.js` is the reference implementation. Its [`examples/invalid/`](examples.html#invalid) folder holds one broken example per semantic rule (`DSDS-XX-*.yaml`) plus a set of plain schema fixtures (`schema-*.yaml`, no rule id — a pure JSON Schema rejection) pinning constraints like enum casing, empty arrays, and `$extensions` namespacing. Every fixture declares its own contract in a leading comment — `# rejectedBy: schema|semantic`, plus `# expect: DSDS-XX` or `# errorAt: /json/pointer` as applicable — and `scripts/validate/conformance-test.js` confirms each one fails for the exact reason and at the exact layer it claims to, not just that it fails at all.
+A tool that checks documents. A conforming validator MUST check both the schema (with format checks turned on) and every semantic rule in the [rule catalog](#rule-details). `scripts/validate/validate.js` is the reference implementation.
+
+Its [`examples/invalid/`](examples.html#invalid) folder holds documents that are broken on purpose:
+
+- **`DSDS-XX-*.yaml`**: at least one for each semantic rule.
+- **`schema-*.yaml`**: documents only the schema rejects, with no rule id. They cover things like the casing of a value, an empty list, and a `$extensions` key with no namespace.
+
+Each one says, in a comment at the top, how it should fail: `# rejectedBy: schema|semantic`, plus `# expect: DSDS-XX` or `# errorAt: /json/pointer` where they apply. `scripts/validate/conformance-test.js` checks that each one fails for exactly that reason, in exactly that place, not just that it fails.
 
 ## The words this spec uses
 
-One term per concept, so a reader and a generator mean the same thing by it. The right-hand column is what a reviewer should flag — each of those synonyms was in use somewhere before this table existed.
+One word for each idea, so a person and a tool mean the same thing by it. The "Not" column lists words a reviewer should flag: each was in use somewhere before this table existed.
 
 {/* dsds:terms */}
 
@@ -68,37 +77,32 @@ One term per concept, so a reader and a generator mean the same thing by it. The
 
 ## Enforcement tiers
 
-Every rule is enforced one of three ways:
+Every rule is checked in one of three ways:
 
-| Tier | How it's checked | What happens if it fails |
+| Tier | How it's checked | What happens when it fails |
 |---|---|---|
-| Structural | Directly by the schema file (required fields, patterns, and similar built-in checks) | Blocks — validation fails |
-| Semantic | By `scripts/validate/validate.js`'s own code (`DSDS-01`–`DSDS-11`: do references resolve, are ids unique, and so on) | Blocks — validation fails |
-| Advisory | By `scripts/validate/lint-docs.js` (`npm run lint`, `DSDS-12`+: RFC 2119 casing, a token description that just restates its id, and similar documentation-quality checks) where a check exists — otherwise a judgment call | Never blocks — always exits 0, warnings only |
+| Structural | By the schema itself: required fields, patterns, and other built-in checks | Blocks: validation fails |
+| Semantic | By the code in `scripts/validate/validate.js` (`DSDS-01`–`DSDS-11`, `DSDS-24` and `DSDS-25`): do references point at something, are ids unique, and so on | Blocks: validation fails |
+| Advisory | By `scripts/validate/lint-docs.js` (`npm run lint`, `DSDS-13`–`DSDS-21`) where a check exists, such as a token description that only repeats its id, or a hard requirement with no `checkedBy`. Otherwise it's a judgment call. Field order isn't a rule: `dsds-format` applies it | Never blocks: always exits 0, warnings only |
 
-Advisory is the newest tier and doesn't cover every SHOULD/MAY in this spec yet — it's additive, so a gap here is a missing check, not a passing one.
+The advisory tier doesn't yet cover every SHOULD and MAY in the spec. It grows over time, so a gap means a check nobody has written, not a document that passed.
 
-`DSDS-05`, `DSDS-08`, `DSDS-09`, and `DSDS-11` are the exception: they report a warning, not a blocking error, unless the validator runs with `--strict`. Every other rule always blocks.
+`DSDS-05`, `DSDS-08`, `DSDS-09`, `DSDS-11` and `DSDS-24` are the exceptions. They report a warning instead of an error, unless the validator runs with `--strict`. Every other semantic rule always blocks.
 
-Every catalog entry declares its own tier explicitly, as `enforcement: structural|semantic|advisory|none` — not just implied by which row of this table it's listed in. `scripts/checks/check-rule-catalog.js` (run on every `npm run check`) enforces two things: every entry's `enforcement` is one of those four values, and — for the semantic tier specifically — that the catalog and `scripts/validate/validate.js` agree exactly on which rules exist in both directions. A catalog entry with no matching `RULES.<NAME>` reference in validate.js, or a `RULES.<NAME>` reference with no catalog entry, fails the build instead of silently producing an untraceable `[undefined]` finding.
+Each rule in the catalog states its tier, as `enforcement: structural|semantic|advisory|none`. It isn't inferred from which row of this table the rule fits. `scripts/checks/check-rule-catalog.js` runs on every `npm run check` and checks two things:
+
+- every rule's `enforcement` is one of those four values;
+- the catalog and `scripts/validate/validate.js` agree on exactly which semantic rules exist. A rule in the catalog with no code, or code with no rule in the catalog, fails the build. Otherwise a finding could show up with no rule id at all.
 
 ## Rule catalog
 
-The table below is generated directly from
-[`schema/conformance-rules.yaml`](https://github.com/somerandomdude/design-system-documentation-schema/blob/main/schema/conformance-rules.yaml)
-by `scripts/generate/generate-rule-catalog.mjs` — not a hand-kept copy — so it cannot
-drift from the machine-readable catalog the validator actually reads.
-`scripts/validate/conformance-test.js` and `scripts/checks/check-rule-catalog.js` (both run
-on every `npm run check`) additionally confirm the catalog and
-`scripts/validate/validate.js`'s own implementation agree. The catalog itself is also
-published as a versioned artifact at
-[`/v{{VERSION}}/conformance-rules.yaml`](/v{{VERSION}}/conformance-rules.yaml)
-alongside the schema bundle, for a tool that wants to read the rule
-descriptions programmatically instead of scraping this page.
+The table below is generated from [`schema/conformance-rules.yaml`](https://github.com/somerandomdude/design-system-documentation-schema/blob/main/schema/conformance-rules.yaml) by `scripts/generate/generate-rule-catalog.mjs`. It isn't a copy kept by hand, so it can't drift from the catalog the validator reads. `scripts/validate/conformance-test.js` and `scripts/checks/check-rule-catalog.js` also run on every `npm run check`, and confirm the catalog and the validator agree.
 
-<ds-callout variant="warning" title="DSDS-01–DSDS-23 is a reset id space, not a continuation of pre-0.20.0's:">
+The catalog is published with each release, next to the schema bundle, at [`/v{{VERSION}}/conformance-rules.yaml`](/v{{VERSION}}/conformance-rules.yaml). A tool can read the rules from there instead of from this page.
 
-Versions through 0.15.2 used a three-digit catalog (`DSDS-001`–`DSDS-006` and similar, in `rules/rules.yaml`) covering a different rewrite of the model entirely. 0.20.0 restarted numbering at `DSDS-01` for a genuinely different rule set — `DSDS-02` here has nothing to do with whatever `DSDS-002` meant before. (0.15.2's own `DSDS-002` was, fittingly, the rule against reusing an identifier — a reminder this reset itself is worth naming explicitly rather than leaving implicit.) If you're citing a rule id from before 0.15.2, say which catalog it's from; a bare `DSDS-0N` is ambiguous across the two.
+<ds-callout variant="warning" title="DSDS-01–DSDS-25 started counting again from 1 in 0.20.0:">
+
+Versions up to 0.15.2 had a different catalog, with three-digit ids (`DSDS-001`–`DSDS-006` and so on, in `rules/rules.yaml`), for a different model. 0.20.0 started again at `DSDS-01` for a new set of rules. So `DSDS-02` here has nothing to do with the old `DSDS-002`. (Fittingly, the old `DSDS-002` was the rule against reusing an id.) If you cite a rule id from 0.15.2 or earlier, say which catalog it's from. A bare `DSDS-0N` could mean either.
 
 </ds-callout>
 
@@ -106,78 +110,384 @@ Versions through 0.15.2 used a three-digit catalog (`DSDS-001`–`DSDS-006` and 
 
 | ID | Rule |
 |---|---|
-| `DSDS-01` | At most one `sourceFiles` entry per platform. |
-| `DSDS-02` | A system entry's `metadata.platforms` closes the platform vocabulary, once declared. |
-| `DSDS-03` | A `checkedBy: automated` rule needs somewhere to actually run. |
-| `DSDS-04` | Entry and shared ids are unique within a document. |
-| `DSDS-05` | An `entryId#itemId` ref must resolve. |
-| `DSDS-06` | A `composes` ref chain must not cycle. |
-| `DSDS-07` | A `depends-on` ref chain must not cycle. |
-| `DSDS-08` | A bare `to:` ref must resolve to a real entry or shared entry. |
-| `DSDS-09` | A `combo`'s `subject`/`items` must resolve. |
-| `DSDS-10` | A `same-as` item's `level`, when declared, must match its target's. |
-| `DSDS-11` | A relative `sourceFiles[].file`, `source`, or `rel: file` `href` must exist on disk. |
-| `DSDS-12` | Capitalize RFC 2119 keywords (MUST/SHOULD) in a guideline's own statement. |
-| `DSDS-13` | A token `description`, when present, shouldn't just restate its id/name or repeat a raw value. |
-| `DSDS-14` | A hard-requirement guideline (must/must-not) with no `checkedBy` at all. |
-| `DSDS-15` | A component entry with no `guidelines` section framed `when-to-use`. |
-| `DSDS-16` | A token `description`, when present, shouldn't just restate its position on a scale. |
-| `DSDS-17` | An entry's own top-level fields don't follow STYLE_GUIDE.md's field order. |
-| `DSDS-18` | An entry's `sections[]` doesn't follow STYLE_GUIDE.md's grouping and ordering. |
-| `DSDS-19` | A `guidelines` section's items aren't ordered must, should, may, should-not, must-not. |
-| `DSDS-20` | A base document's own top-level fields don't follow STYLE_GUIDE.md's field order. |
-| `DSDS-21` | A base document's `entries[]` aren't ordered by `kind`. |
-| `DSDS-22` | A nested object's fields don't follow the order its own schema file declares. |
-| `DSDS-23` | An entry's `combos[]` don't keep one `subject` together, in `level` order. |
+| [`DSDS-01`](#dsds-01) | At most one `sourceFiles` entry per platform. |
+| [`DSDS-02`](#dsds-02) | Once a system lists its platforms in `metadata.platforms`, no other platform can be used. |
+| [`DSDS-03`](#dsds-03) | A `checkedBy: automated` rule needs something that actually runs it. |
+| [`DSDS-04`](#dsds-04) | Entry and shared ids are unique within a document. |
+| [`DSDS-05`](#dsds-05) | An `entryId#itemId` ref must point at something that exists. |
+| [`DSDS-06`](#dsds-06) | A `uses`, `extends`, `same-as` or `replaced-by` chain must not loop. |
+| [`DSDS-07`](#dsds-07) | Retired: merged into DSDS-06. |
+| [`DSDS-08`](#dsds-08) | A `to` with no `#` must point at an entry that exists. |
+| [`DSDS-09`](#dsds-09) | A combo's `subject` and `items` must point at things that exist. |
+| [`DSDS-10`](#dsds-10) | If a `same-as` item states a `level`, it must match its target's. |
+| [`DSDS-11`](#dsds-11) | A relative file path in `sourceFiles`, `source`, `rel: file` or `rel: source` must point at a file that exists. |
+| [`DSDS-12`](#dsds-12) | Retired: a guideline's `level` already says how strong it is. |
+| [`DSDS-13`](#dsds-13) | A token's `description` shouldn't just repeat its id, its name or its value. |
+| [`DSDS-14`](#dsds-14) | A `must` or `must-not` guideline has no `checkedBy`. |
+| [`DSDS-15`](#dsds-15) | A component has no `guidelines` section framed `when-to-use`. |
+| [`DSDS-16`](#dsds-16) | A token's `description` shouldn't just repeat its place on a scale. |
+| [`DSDS-17`](#dsds-17) | Retired: `dsds-format` applies this order. |
+| [`DSDS-18`](#dsds-18) | An entry's `sections` aren't grouped and ordered as STYLE_GUIDE.md asks. |
+| [`DSDS-19`](#dsds-19) | A `guidelines` section's items aren't ordered must, should, may, should-not, must-not. |
+| [`DSDS-20`](#dsds-20) | Retired: `dsds-format` applies this order. |
+| [`DSDS-21`](#dsds-21) | A base document's `entries` aren't ordered by `kind`. |
+| [`DSDS-22`](#dsds-22) | Retired: `dsds-format` applies this order. |
+| [`DSDS-23`](#dsds-23) | Retired: `dsds-format` applies this order. |
+| [`DSDS-24`](#dsds-24) | A generic `entry` or `section` has a field no DSDS schema declares. |
+| [`DSDS-25`](#dsds-25) | A pointer must sit where its kind belongs. |
 
 {/* /dsds:rule-catalog */}
 
-`DSDS-06` and `DSDS-07` restore a cycle check the pre-0.20.0 spec had — nothing should point back at itself through a chain of `composes` or `depends-on` links. The 0.20.0 rewrite dropped it by accident; it's enforced by the validator's own code now, not the schema itself.
+`DSDS-06` brings back a check the model before 0.20.0 had: nothing can point back at itself through a chain of `uses` links. The 0.20.0 rewrite dropped it by mistake. Until 0.22.0 it covered `composes`, and `DSDS-07` covered `depends-on`. 0.22.0 merged both into `uses` and retired `DSDS-07`, keeping its id so it's never reused. The validator's own code checks it, not the schema.
 
 ### Project-scope resolution
 
-`DSDS-05`, `DSDS-08`, and `DSDS-09` check the whole **project**, not just the one document they're given. A `rel: file` link (the way the spec recommends splitting up a large system) joins the resolution pool, and so does every other file passed to the validator in the same run, even without a link between them — the way a standalone entry file, with no field of its own to declare "these are my siblings," still resolves a reference to a component listed alongside it.
+`DSDS-05`, `DSDS-08` and `DSDS-09` look across the whole **project**, not only the document they're given. The project includes every file reached through a `rel: file` link, which is how the spec suggests splitting up a large system. It also includes every other file passed to the validator in the same run, even with no link between them. That's how a standalone entry file, which has no field to list the files next to it, can still point at a component listed beside it.
 
-The search is bounded to the folder holding the file being validated, and its subfolders — never a parent folder, a sibling folder, or the wider repo. Deliberately narrow: widening it to the nearest `.git` or `package.json` would let a CI job checking one untrusted document read far more of a monorepo than it should. A future `--root` flag could widen it on request; nothing has needed one yet.
+The search stays inside the folder of the file being validated, and its subfolders. It never goes into a parent folder, a sibling folder or the rest of the repo. That's on purpose: if it went up to the nearest `.git` or `package.json`, a CI job checking one untrusted document could read far more of a large repo than it should. A future `--root` option could widen it when asked to. Nothing has needed one yet.
 
-An unresolved reference is a **warning**, not a failure, only in this cross-file case — a self-contained document's unresolved `to:` is still a hard error. A standalone entry file is the one exception even then, since it can never assert "this is definitely everything" the way a base document's `entries`/`shared` arrays can. Run with `--strict` to turn these warnings into failures.
+An unresolved reference is a **warning** rather than a failure only in this cross-file case. In a document that's complete on its own, an unresolved `to` is still an error. A standalone entry file is always the exception, because it can never claim to be everything, the way a base document's `entries` and `shared` lists can. Run with `--strict` to turn these warnings into failures.
 
-Whether a `to:` value even *looks like* a valid id is checked separately, directly by the schema: `common/ref.schema.yaml`'s `to` field only accepts id-shaped values, so a display name or a value with a space in it fails before `DSDS-05`, `DSDS-08`, or `DSDS-09` ever run. See [common/ref](schema.html#common-ref).
+Whether a `to` even *looks like* an id is checked separately, by the schema. The `to` field in `common/ref.schema.yaml` only accepts values shaped like an id. So a display name, or a value with a space in it, fails before `DSDS-05`, `DSDS-08` or `DSDS-09` run. See [common/ref](schema.html#common-ref).
 
-**`DSDS-11`** covers one of these: whether a relative `sourceFiles[].file`, `source`, or `rel: file` `href` actually points at a file that exists on disk, checked relative to the file being validated and bounded to the same directory-of-the-target boundary as `DSDS-05`/`DSDS-08`/`DSDS-09`. It applies to a base document's own top-level `refs` as well as to each entry's. Warning-only, promoted to a failure under `--strict`, same tier and same reason — it's opt-in because it's the one rule that reads the filesystem beyond the document being validated. A related check remains deliberately unbuilt: confirming the exact ids or paths *inside* another file the way DTCG-path resolution would need — that would mean actually reading and parsing the target's contents, not just confirming it exists.
+**`DSDS-11`** checks files the same way: that a relative path in `sourceFiles[].file`, `source`, or a `rel: file` or `rel: source` `href` points at a file that exists. A path starts from the file being validated, or for `sourceFiles`, from the system's `sourceRoot`. It stays inside the same folder as `DSDS-05`, `DSDS-08` and `DSDS-09`. It covers a base document's own `refs`, as well as each entry's. It's a warning, which becomes a failure with `--strict`, like those three. It's the one rule that opens files beyond the document being validated.
+
+One related check isn't built, on purpose: confirming that an id or path *inside* another file exists, as checking a DTCG path would need. That means reading and parsing the other file, not only checking it's there.
+
+## Rule details
+
+One section for each rule: what it checks, how to fix a finding and, for most validator rules, a document that breaks it on purpose. `dsds-validate --json` and `dsds-lint --json` link each finding to its rule's section here. This is generated from the same catalog as the table above.
+
+{/* dsds:rule-details */}
+
+### DSDS-01
+
+**At most one `sourceFiles` entry per platform.**
+
+*Checked by `dsds-validate`.*
+
+A component can't have two `sourceFiles` entries for the same `platform`, or two with no `platform` at all. A tool reads each platform's API from exactly one source file, so it needs to know which one.
+
+**How to fix:** Merge the duplicate `sourceFiles` entries, or give each one its own `platform`.
+
+**Example that breaks it:** [`DSDS-01-one-api-per-platform.yaml`](/examples/invalid/DSDS-01-one-api-per-platform.yaml)
+
+### DSDS-02
+
+**Once a system lists its platforms in `metadata.platforms`, no other platform can be used.**
+
+*Checked by `dsds-validate`.*
+
+When a `kind: system` entry lists `metadata.platforms`, every `platform` used anywhere in the document has to be on that list. That includes a component's `sourceFiles` and `imports` entries, and a status.
+
+**How to fix:** Use a platform listed in the system entry's `metadata.platforms`, or add the new platform to that list.
+
+**Example that breaks it:** [`DSDS-02-platform-vocabulary-status-list.yaml`](/examples/invalid/DSDS-02-platform-vocabulary-status-list.yaml), [`DSDS-02-platform-vocabulary.yaml`](/examples/invalid/DSDS-02-platform-vocabulary.yaml)
+
+### DSDS-03
+
+**A `checkedBy: automated` rule needs something that actually runs it.**
+
+*Checked by `dsds-validate`.*
+
+A guideline that says it's checked automatically has to list, in its `checks`, at least one test, lint rule or agent eval: a pointer with an `href` to something that runs outside the document. A checklist step (a `to`) doesn't count, because a person works through it. Without one, "automated" is a label nobody can verify.
+
+**How to fix:** Add the test, lint rule or agent eval to `checks` as an `href`, with `role` saying which. If nothing runs it, change `checkedBy` to `assisted` or `manual`.
+
+**Note:** This only checks that such a pointer exists, not what it proves. An agent eval often gives a pass rate or a judged score rather than a clear pass or fail. So `checkedBy: assisted` is the more honest choice, unless the eval really does give the same yes-or-no answer every time.
+
+**Example that breaks it:** [`DSDS-03-checked-by-needs-ref.yaml`](/examples/invalid/DSDS-03-checked-by-needs-ref.yaml)
+
+### DSDS-04
+
+**Entry and shared ids are unique within a document.**
+
+*Checked by `dsds-validate`.*
+
+`entries` and `shared` draw their ids from the same pool. A ref like `entryId#itemId` can't say which of the two lists it means. So no two entries can share an `id`, whichever list each one is in.
+
+**How to fix:** Rename one of the entries so every id across `entries` and `shared` is different.
+
+**Example that breaks it:** [`DSDS-04-unique-entry-id.yaml`](/examples/invalid/DSDS-04-unique-entry-id.yaml)
+
+### DSDS-05
+
+**An `entryId#itemId` ref must point at something that exists.**
+
+*Checked by `dsds-validate`.*
+
+When a ref's `to` has a `#` (see [common/ref](schema.html#common-ref)), the entry before the `#` has to exist. The part after it has to name something on that entry: an item, a trait (`#traitId`) or a trait value (`#traitId.valueId`). It also can't name two things equally (processing model §2). This is what makes a `same-as` reuse a real, checked link, rather than text that only looks right. It applies whether the target is in `shared` or `entries`.
+
+**How to fix:** Change the part after `#` to an address that exists on the target entry, or give the item you mean that `id`. If it names two things, give one of them its own `id`.
+
+**Example that breaks it:** [`DSDS-05-item-ref-resolves.yaml`](/examples/invalid/DSDS-05-item-ref-resolves.yaml)
+
+### DSDS-06
+
+**A `uses`, `extends`, `same-as` or `replaced-by` chain must not loop.**
+
+*Checked by `dsds-validate`.*
+
+A consumer follows these four kinds of pointer from one thing to the next, to find out what an entry is built from, what it inherits from, where an item's content is stated, and what replaces something deprecated. Following any of them must never lead back to where it started, or the question has no answer. `uses` and `extends` link entries. `same-as` and `replaced-by` link items, trait values and entries. Each kind is checked on its own.
+
+**How to fix:** Remove or change one ref so the chain no longer leads back to where it started.
+
+**Note:** Until 0.22.0 this checked `composes` refs only, and DSDS-07 checked `depends-on`. 0.22.0 merged both into `uses`, and added the other three chains the processing model follows (§9).
+
+**Example that breaks it:** [`DSDS-06-same-as-cycle.yaml`](/examples/invalid/DSDS-06-same-as-cycle.yaml), [`DSDS-06-uses-cycle.yaml`](/examples/invalid/DSDS-06-uses-cycle.yaml)
+
+### DSDS-07
+
+**Retired: merged into DSDS-06.**
+
+*Retired in 0.22.0. No tool checks it.*
+
+Checked that a chain of `depends-on` refs didn't loop. 0.22.0 merged `depends-on` into `uses`, which DSDS-06 checks. The id is kept so it's never reused for a different rule.
+
+**How to fix:** Nothing to fix. A finding citing DSDS-07 came from a validator older than 0.22.0; see DSDS-06.
+
+### DSDS-08
+
+**A `to` with no `#` must point at an entry that exists.**
+
+*Checked by `dsds-validate`.*
+
+When a ref's `to` is just an id, with no `#`, the entry it names has to exist, in `entries` or `shared` (see `DSDS-04`). The validator looks across the whole project, not only the document it was given. It follows `rel: file` links, and the links in those files, and treats every file given to it in one run as part of the same project. If the target still isn't found, that's a warning rather than an error, unless there was nothing else to look in.
+
+**How to fix:** Change `to` to an id that exists. If the target lives in another file, validate both files in the same run, or link them with a `rel: file` ref.
+
+**Example that breaks it:** [`DSDS-08-entry-ref-resolves.yaml`](/examples/invalid/DSDS-08-entry-ref-resolves.yaml)
+
+### DSDS-09
+
+**A combo's `subject` and `items` must point at things that exist.**
+
+*Checked by `dsds-validate`.*
+
+Each `subject` and item in a combo names one of three things: a trait on the same entry (its id for a boolean trait, `traitId.valueId` for an enum value), a token in braces (`{color.action.primary}`), or an entry's id. So `subject: size.small` on a component with no `size` trait fails, and so does a token that doesn't exist. A trait is always looked up on the same entry, which the validator can always see in full, so a missing one is always an error. A token or an entry is looked up across the project, the same way as `DSDS-05` and `DSDS-08`, and is a warning when the search couldn't see every file.
+
+**How to fix:** Name a trait on this entry (`traitId` or `traitId.valueId`), a token in braces (`{token-id}`), or an existing entry id.
+
+**Example that breaks it:** [`DSDS-09-combo-target-resolves.yaml`](/examples/invalid/DSDS-09-combo-target-resolves.yaml)
+
+### DSDS-10
+
+**If a `same-as` item states a `level`, it must match its target's.**
+
+*Checked by `dsds-validate`.*
+
+An item that reuses another with `same-as` takes the target's `level`, so it doesn't need to state one: the pointer is the whole item. An author can still write a `level`, and then there are two copies with nothing else keeping them the same. When the target can be found, has a `level`, and the reusing item states one too, this checks the two match. An item meant to have a different level is a `refines`, not a `same-as`.
+
+**How to fix:** Remove `level` from the reusing item so it takes the target's. If the level is meant to differ, write a `for: agent` rule with its own level and point its `refines` at the target, instead of reusing it with `same-as`.
+
+**Example that breaks it:** [`DSDS-10-same-as-level-matches.yaml`](/examples/invalid/DSDS-10-same-as-level-matches.yaml)
+
+### DSDS-11
+
+**A relative file path in `sourceFiles`, `source`, `rel: file` or `rel: source` must point at a file that exists.**
+
+*Checked by `dsds-validate`.*
+
+A relative path should point at a real file. That covers a component's `sourceFiles[].file`, a token's or theme's `source`, and the `href` of any `rel: file` or `rel: source` ref. A typo or an out-of-date path quietly breaks what those fields promise: that a tool can read the API, or the DTCG tokens, straight from the file named there. Anything after a `#` or `?` is ignored, so only the file itself has to exist. A `sourceFiles` path starts from the system's `metadata.sourceRoot` when the validator can see it (in the same document, or in a file validated in the same run), and from the document's own folder otherwise. A `sourceRoot` that's a URL isn't checked. Only paths inside the folder of the file being validated are checked, the same limit `DSDS-05`, `DSDS-08` and `DSDS-09` use. A path that leads outside it, or a URL (`https:`, `npm:` and so on), is skipped.
+
+**How to fix:** Fix the path so it's correct relative to this document's folder (or, for `sourceFiles`, the system's `sourceRoot`), or remove the reference if the file is gone. If the code lives in another repository, set `metadata.sourceRoot` on the system entry.
+
+**Note:** A warning, which becomes a failure with `--strict`, like `DSDS-05`, `DSDS-08` and `DSDS-09`. It's opt-in for a similar reason: it's the one rule that opens files the validator otherwise wouldn't read.
+
+**Example that breaks it:** [`DSDS-11-base-document-file-ref.yaml`](/examples/invalid/DSDS-11-base-document-file-ref.yaml), [`DSDS-11-file-ref-exists.yaml`](/examples/invalid/DSDS-11-file-ref-exists.yaml), [`DSDS-11-source-root.yaml`](/examples/invalid/DSDS-11-source-root.yaml)
+
+### DSDS-12
+
+**Retired: a guideline's `level` already says how strong it is.**
+
+*Retired in 0.22.0. No tool checks it.*
+
+Reported a lowercase "must" or "should" in a guideline's `statement`, and asked for it in capitals. A guideline's `level` already says how strong the rule is, so capitals added nothing a tool needs. And in plain English, like "when a button must stay in the tab order", capitalizing the word added a requirement nobody meant. Documenting Sanity UI raised 161 of these. The id is kept so it's never reused.
+
+**How to fix:** Nothing to fix. Set the rule's strength with `level`.
+
+### DSDS-13
+
+**A token's `description` shouldn't just repeat its id, its name or its value.**
+
+*A suggestion from `dsds-lint`. It never fails a build.*
+
+A token's `description` is optional and meant to be short. If an author writes one, it should add what the id can't, such as the token's role or when to use it. A description that only repeats the id or name, or the raw value the DTCG file already holds, looks like documentation but says nothing.
+
+**How to fix:** Say what the token is for or when to use it, or remove the description.
+
+**Note:** Ported from PR #33 by Cody Clark, first written as DSDS-011 for the model before 0.20.0 (`git show 3c805b7`). It uses the same method: after tidying the text, it flags an exact repeat or a bare value. It errs on the side of not flagging: a description with any role or usage information in it is never flagged.
+
+### DSDS-14
+
+**A `must` or `must-not` guideline has no `checkedBy`.**
+
+*A suggestion from `dsds-lint`. It never fails a build.*
+
+`checkedBy` says whether a guideline is checked automatically, with help, or by hand. Leaving it out means a tool can't tell whether the rule can be checked at all, not just that nobody has yet. Only `must` and `must-not` items are flagged: a `should` or `may` item that doesn't say how it's checked matters much less. An item that reuses another with `same-as` (DSDS-10) takes the target's `checkedBy`, like the rest of its content, so it's only flagged when neither one has it. A `same-as` target in another document isn't flagged: the lint can't see it, and making the pointer repeat its `checkedBy` would defeat the point of the pointer.
+
+**How to fix:** Add `checkedBy: manual`, `checkedBy: assisted`, or `checkedBy: automated` with a `checks` ref.
+
+**Note:** DSDS-03 already blocks a narrower case: `checkedBy: automated` with no `checks` to back it. This advisory rule covers the case DSDS-03 can't see: `checkedBy` left out entirely.
+
+### DSDS-15
+
+**A component has no `guidelines` section framed `when-to-use`.**
+
+*A suggestion from `dsds-lint`. It never fails a build.*
+
+"When do I use this?" is usually the first question a component's documentation has to answer, before how to use it well. This flags a component with no guidelines section that has `framing: when-to-use`.
+
+**How to fix:** Add a `guidelines` section with `framing: when-to-use`.
+
+**Note:** Adapted from the 0.16.0 branch's "entity-missing-use-cases" check, which looked for a separate `use-cases` block. 0.20.0 moved that content into a `guidelines` section, so this looks for the section instead.
+
+### DSDS-16
+
+**A token's `description` shouldn't just repeat its place on a scale.**
+
+*A suggestion from `dsds-lint`. It never fails a build.*
+
+A token's optional `description` should add what the id can't, such as the token's role or when to use it. One that only gives its place on a scale ("Shade 900", "Step 500", "Level 6 of the neutral scale") looks like documentation but says nothing. That number is already in the id, and in where the token sits among its `metadata.group`. This is the companion to DSDS-13: the scale step, rather than the id or the value.
+
+**How to fix:** Say what the token is for or when to use it, or remove the description.
+
+**Note:** Ported from PR #37 by Cody Clark, first proposed as DSDS-012 for the model before 0.20.0. It uses the same method: it flags a description that is only a scale word followed by a number, optionally followed by "of the \<family> scale" or "ramp". 0.20.0 has no separate token-group kind, so it checks `kind: token` only. It errs on the side of not flagging. The scale word has to come first and be singular, so forms like "Nine weights", "Twelve steps" and "Neutral 700" are left alone, and any word about role or usage stops a match. A description that also repeats the id or name is left to DSDS-13, so it's only reported once.
+
+### DSDS-17
+
+**Retired: `dsds-format` applies this order.**
+
+*Retired in 0.22.0. No tool checks it.*
+
+Reported that an entry's own fields weren't in STYLE_GUIDE.md's order. That order has one right answer, read from the schema files, so 0.22.0 replaced the report with `dsds-format`, which puts the fields in order. The id is kept so it's never reused.
+
+**How to fix:** Run `dsds-format` on the document.
+
+### DSDS-18
+
+**An entry's `sections` aren't grouped and ordered as STYLE_GUIDE.md asks.**
+
+*A suggestion from `dsds-lint`. It never fails a build.*
+
+STYLE_GUIDE.md §4 asks for sections of the same `kind` to sit together, with the kinds running from general to specific: guidelines, definitions, steps, then the generic `section`. Several `guidelines` sections are ordered by scope: `framing: when-to-use` first, then `how-to-use` or no framing. Sections with the same framing are then ordered by who they're for: `for: all`, then `human`, then `agent`.
+
+**How to fix:** Keep sections of one kind together, in the order guidelines, definitions, steps, section. Order guidelines sections by framing, then audience.
+
+**Note:** Framing comes first and audience second, so audience is only compared between sections with the same framing. A `for: agent` when-to-use section rightly comes before a `for: all` how-to-use one, so comparing audience across framings would flag something that's fine. Until 0.22.0 a section with `tags` was ranked as a third, narrowest group. That gave `tags` two jobs, classifying a section and placing it, so tagging a section could put it out of order. `tags` only classify now, and this rule ignores them.
+
+### DSDS-19
+
+**A `guidelines` section's items aren't ordered must, should, may, should-not, must-not.**
+
+*A suggestion from `dsds-lint`. It never fails a build.*
+
+STYLE_GUIDE.md §5 asks for the items in a guidelines section to be ordered by `level`, in exactly that order: strongest "do" to strongest "don't", with the two weaker levels in the middle. Items with the same level keep the order they're written in; only an item placed before a stronger level is flagged. An item with no `level` of its own is ranked at its `same-as` target's level when the target is in the same document, and left out of the check when it isn't.
+
+**How to fix:** Reorder the items: must, should, may, should-not, must-not.
+
+### DSDS-20
+
+**Retired: `dsds-format` applies this order.**
+
+*Retired in 0.22.0. No tool checks it.*
+
+Reported that a base document's own fields weren't in STYLE_GUIDE.md's order. That order has one right answer, read from the schema files, so 0.22.0 replaced the report with `dsds-format`, which puts the fields in order. The id is kept so it's never reused.
+
+**How to fix:** Run `dsds-format` on the document.
+
+### DSDS-21
+
+**A base document's `entries` aren't ordered by `kind`.**
+
+*A suggestion from `dsds-lint`. It never fails a build.*
+
+STYLE_GUIDE.md §1 asks for entries to be ordered by `kind`, in the order entries/entry.schema.yaml lists them: `system`, `token`, `theme`, `component`, then `entry`. A namespaced custom kind isn't on that list, and goes after all five.
+
+**How to fix:** Reorder `entries` by kind: `system`, `token`, `theme`, `component`, `entry`, then any custom kinds.
+
+**Note:** The order of entries of the same kind isn't checked on purpose. STYLE_GUIDE.md asks for "whatever order reads best" there, which no tool can work out, so only an entry placed before a kind that should come first is reported.
+
+### DSDS-22
+
+**Retired: `dsds-format` applies this order.**
+
+*Retired in 0.22.0. No tool checks it.*
+
+Reported that a nested object's fields weren't in the order its schema file lists them. That order has one right answer, read from the schema files, so 0.22.0 replaced the report with `dsds-format`, which puts the fields in order. The id is kept so it's never reused.
+
+**How to fix:** Run `dsds-format` on the document.
+
+### DSDS-23
+
+**Retired: `dsds-format` applies this order.**
+
+*Retired in 0.22.0. No tool checks it.*
+
+Reported that an entry's `combos` didn't keep each `subject` together, in `level` order. That grouping has one right answer, so 0.22.0 replaced the report with `dsds-format`, which groups them. The id is kept so it's never reused.
+
+**How to fix:** Run `dsds-format` on the document.
+
+### DSDS-24
+
+**A generic `entry` or `section` has a field no DSDS schema declares.**
+
+*Checked by `dsds-validate`.*
+
+`kind: entry` and `kind: section` are checked against the open base that the other kinds build on. So the schema accepts any extra field on them, and on a generic entry's `metadata`. That openness is what lets namespaced custom kinds add fields. But on the generic kinds it means a typo (`descripton`) or a field a release removed (`purpose`) passes without a word. This reports each one. Namespaced custom kinds aren't checked, since extra fields are what they're for.
+
+**How to fix:** Fix the spelling, or remove the field. Put vendor data under `$extensions` with a namespaced key. If you need real extra fields, use a namespaced custom kind (`acme.pattern`) instead of `kind: entry`.
+
+**Note:** A warning, which becomes a failure with `--strict`. Added in 0.22.0 instead of closing the two kinds, which would have broken any document that relies on them being open. A validator that only runs the JSON Schema won't report it, because the schema still accepts the field. The items of a generic section aren't checked, because the base doesn't say what shape they have.
+
+**Example that breaks it:** [`DSDS-24-undeclared-field.yaml`](/examples/invalid/DSDS-24-undeclared-field.yaml)
+
+### DSDS-25
+
+**A pointer must sit where its kind belongs.**
+
+*Checked by `dsds-validate`.*
+
+`same-as` reuses another item's content, so it goes on a section item and has to point at an item of the same section kind: a guideline reuses a guideline, a definition a definition, a step a step. `replaced-by` names what replaces something deprecated, so it goes on a deprecated entry, trait or trait value. A kind of pointer that has its own field goes in that field, not in `refs`: `extends` and `alternatives` on an entry, `specs` on a component, and `alternatives`, `evidence`, `checks` and `refines` on a guideline item. And a `rel: file` ref points at another DSDS document, which a consumer reads as part of the project. So one that points at a code or token file is reported as a warning, judged by its file extension or, for a `.json` file on disk, by its content. Processing model §3, §4, §5 and §7.
+
+**How to fix:** Point `same-as` at an item of the same section kind. Move `replaced-by` onto the deprecated entry, trait or trait value, or deprecate the thing it sits on. Move a pointer with its own field into that field, without its `rel`. Make a `rel: file` that points at a code or token file `rel: source`.
+
+**Note:** Added in 0.22.0, with the processing model. The `same-as` and `replaced-by` checks only run once the target is found, so they never repeat what DSDS-05 or DSDS-08 already report.
+
+**Example that breaks it:** [`DSDS-25-file-ref-not-a-document.yaml`](/examples/invalid/DSDS-25-file-ref-not-a-document.yaml), [`DSDS-25-ref-placement.yaml`](/examples/invalid/DSDS-25-ref-placement.yaml)
+
+{/* /dsds:rule-details */}
 
 ## Conformance suite
 
-`scripts/validate/validate.js` is the reference implementation, but nothing about DSDS requires it to be the only one — a second, independent implementation is one of this spec's own [1.0 criteria](stability.html#criteria-for-declaring-10). The conformance suite is what that second implementation checks itself against, without reading this repo's JavaScript at all.
+`scripts/validate/validate.js` is the reference implementation, but DSDS doesn't need it to be the only one. A second validator, written independently, is one of the spec's [1.0 criteria](stability.html#criteria-for-declaring-10). The conformance suite is what that second validator tests itself against, without reading any of this repo's JavaScript.
 
-Published as one versioned artifact per release, at
-[`/v{{VERSION}}/conformance-suite/manifest.json`](/v{{VERSION}}/conformance-suite/manifest.json),
-alongside a copy of every fixture it references (`/v{{VERSION}}/conformance-suite/examples/invalid/`). Generated by `scripts/generate/generate-conformance-suite.mjs` directly from each fixture's own leading-comment contract (the same `rejectedBy`/`expect`/`errorAt` fields [Conformance validator](#conforming-validator) describes above) — not hand-maintained, so it can't drift from the fixtures themselves.
+Each release publishes it at [`/v{{VERSION}}/conformance-suite/manifest.json`](/v{{VERSION}}/conformance-suite/manifest.json), with a copy of every example it lists (`/v{{VERSION}}/conformance-suite/examples/invalid/`). `scripts/generate/generate-conformance-suite.mjs` builds it from the comment at the top of each example: the same `rejectedBy`, `expect` and `errorAt` described under [Conforming validator](#conforming-validator). It isn't kept by hand, so it can't drift from the examples.
 
-**The runner contract** — what implementing conformance against this artifact means, for a validator in any language:
+**How to test a validator against it**, in any language:
 
-1. Fetch the manifest. For each entry in `fixtures`, fetch the file it names (relative to the manifest itself).
-2. Validate that file against the schema bundle for the manifest's own `schemaVersion`.
-3. Confirm the document is **rejected** — and rejected for the declared reason, not just rejected somehow:
-   - `rejectedBy: "schema"` — at least one resulting error must be a pure JSON Schema violation (no `DSDS-XX` rule id attached). If `errorAt` is set, one such error's instance path must equal it (`"/"` for the document root).
-   - `rejectedBy: "semantic"` — every id listed in `expect` must appear among the resulting errors *or* warnings tagged with that id (a semantic rule may report as either, depending on whether the validator runs in a `--strict`-equivalent mode).
-4. A fixture that validates cleanly, or fails for a different reason than it declares, is a **conformance failure for the validator under test** — passing "some validators reject it" isn't the bar; rejecting it for the right, stated reason is.
+1. Fetch the manifest. For each item in `fixtures`, fetch the file it names, relative to the manifest.
+2. Validate that file against the schema bundle for the manifest's `schemaVersion`.
+3. Check that the document is **rejected**, and rejected for the stated reason, not just for any reason:
+   - `rejectedBy: "schema"`: at least one error has to come from the schema itself, with no `DSDS-XX` rule id. If `errorAt` is set, one of those errors has to be at that location (`"/"` for the top of the document).
+   - `rejectedBy: "semantic"`: every id in `expect` has to appear among the errors *or* warnings. A semantic rule can report either, depending on whether the validator runs in a strict mode.
+4. A document that passes, or fails for a different reason than it states, means the validator **doesn't conform**. Rejecting it isn't enough: it has to be rejected for the right reason.
 
-This is exactly what `scripts/validate/conformance-test.js` already does against `scripts/validate/validate.js` on every `npm run check` — the manifest just makes the same check runnable by something that isn't that script.
+`scripts/validate/conformance-test.js` already does exactly this for `scripts/validate/validate.js`, on every `npm run check`. The manifest lets something other than that script run the same test.
 
 ## Open conventions
 
-The schema deliberately leaves some questions unanswered — not oversights, but places where a fixed rule would fit some teams and not others.
+Some questions the schema leaves open on purpose. They aren't oversights: a fixed answer would suit some teams and not others.
 
-- **Where does a guideline item's pointer go — `refs`, or a named field?** `alternatives`, `evidence`, `related`, and `checks` each exist for one specific `rel`: `alternative-to`, an external standard, `refines`, and `test`/`lint-rule`. Any other `rel` — `extends`, `depends-on`, `composes`, `part-of`, `replaces`, `implements`, `relates-to`, `pairs-with`, `excludes`, `see-also` — goes in the general-purpose `refs` field instead, alongside `same-as` and `external-link`. See [sections/guidelines](schema.html#sections-guidelines).
-- **Where does an entry's primary source file go?** `refs` with `rel: source` — see [common/ref](schema.html#common-ref).
-- **What does `tags[0]` mean?** The first tag, by convention, is the entry's main category — see [metadata](schema.html#metadata-metadata).
-- **How does a token's `source` point at one key inside a shared DTCG file, not just the whole file?** By convention, a token's own `id` doubles as its path in the DTCG token tree — `color.action.primary` names the same token in both places, which is why `entries/token.id` allows slash separators DSDS ids otherwise don't. When a project's DTCG paths don't line up with its DSDS ids, point `source`'s `href` at the file plus a JSON Pointer fragment instead (`./tokens.dtcg.json#/color/action/primary`) — ordinary URI syntax, no schema change.
-- **What is a component's status when it ships on more than one platform?** Author one `metadata.status` entry per platform and let the overall status be *inferred* from them, rather than stating a separate overall value that can silently disagree. See [Status across platforms](#status-across-platforms) below.
+- **Where does a pointer on a guideline item go: `refs`, or a named field?** Each named field holds one kind of pointer and says what kind, so a pointer there has no `rel`: `uses`, `alternatives` (alternative-to), `evidence` (cites), `checks` (checked-by) and `refines`. Every other kind, such as `same-as` and `relates-to`, goes in `refs` with its `rel`. A kind that has its own field never goes in `refs` (`DSDS-25`). See [common/ref](schema.html#common-ref) for what each `rel` means.
+- **Where does an entry's main source file go?** In `refs`, with `rel: source`. A component's per-platform source files go in `sourceFiles` instead. See [common/ref](schema.html#common-ref).
+- **What does `tags[0]` mean?** By convention, the first tag is the entry's main category. See [metadata](schema.html#metadata-metadata).
+- **How does a token's `source` point at one token inside a shared DTCG file?** By convention, a token's `id` is also its path in the DTCG file: `color.action.primary` names the same token in both. That's why a token's `id` allows the slashes other DSDS ids don't. When a project's DTCG paths don't match its DSDS ids, add a JSON Pointer to the file path instead (`./tokens.dtcg.json#/color/action/primary`). It's ordinary URL syntax, so the schema doesn't need to change.
+- **What is a component's status when it ships on more than one platform?** Write one `metadata.status` for each platform, and work out the overall status from those. Don't write a separate overall status that could quietly disagree. See [Status across platforms](#status-across-platforms) below.
 
 ## Status across platforms
 
-A component rarely reaches the same maturity everywhere at once: stable on web, beta on iOS, not started on Android. `metadata.status` accepts either a single object or a list of them, each optionally naming its own `platform`.
+A component rarely reaches the same stage everywhere at once. It might be stable on the web, in beta on iOS, and not started on Android. `metadata.status` takes either one status or a list of them, each of which can name its own `platform`.
 
 ```yaml
 metadata:
@@ -190,26 +500,30 @@ metadata:
       since: "2.0.0"
 ```
 
-**A consumer SHOULD derive a component's overall status from the aggregate of its per-platform entries, rather than expect a separately authored overall value.** There is no `overall` field, deliberately: a stated overall status is a second source of truth that drifts the moment one platform moves, and every consumer that needs one can compute it consistently from the entries that are already there.
+**A consumer SHOULD work out a component's overall status from its per-platform statuses, instead of expecting one to be written separately.** There's no `overall` field, on purpose. A separate overall status is a second copy of the truth, and it goes stale as soon as one platform changes. Every consumer that needs an overall status can work it out the same way from what's already there.
 
-How to aggregate is the consumer's decision, because it depends on the question being asked. Two conventions cover most cases:
+How to combine them is up to the consumer, because it depends on the question. Two approaches cover most cases:
 
-- **Least-mature wins** — the honest answer to "can I depend on this everywhere?" A component that is `stable` on web and `beta` on iOS is `beta` overall.
-- **Per-platform, unaggregated** — the honest answer to "can I depend on this *here*?" A renderer showing a React developer the React status shouldn't dim it because iOS lags.
+- **The least mature status wins.** This answers "can I rely on this everywhere?" A component that's `stable` on the web and `beta` on iOS is `beta` overall.
+- **Show each platform separately.** This answers "can I rely on this *here*?" A tool showing a React developer the React status shouldn't mark it down because iOS is behind.
 
-A producer SHOULD declare `metadata.platforms` on the system entry when a document uses per-platform statuses, so a consumer can tell the difference between a platform that is deliberately unsupported and one that simply has no status entry yet (`DSDS-02` then closes that vocabulary). A single status object with no `platform` still means exactly what it always did: this entry's status, everywhere.
+When a document uses per-platform statuses, a producer SHOULD list `metadata.platforms` on the system entry. Then a consumer can tell a platform that's deliberately unsupported from one that just has no status yet, and `DSDS-02` stops any other platform being used. A single status with no `platform` still means what it always has: the entry's status everywhere.
 
 ## Passing isn't the same as good
 
-A document with zero errors and zero warnings can still be bad documentation — the schema checks structure, not judgment. [`examples/anti-patterns/`](examples.html#anti-patterns) collects a few small documents that validate cleanly and are still worth avoiding: a definition that only restates its own term, a `checkedBy: manual` claim too vague to actually check, and guideline prose that names a concept (a "token-group" entry) the spec doesn't have. Each file's own leading comment says what's wrong with it and why the schema can't catch it. Deliberately excluded from the default `npm run check` sweep — not meant to be copied.
+A document with no errors and no warnings can still be poor documentation. The schema checks structure, not judgment. [`examples/anti-patterns/`](examples.html#anti-patterns) collects a few small documents that pass and are still worth avoiding: a definition that only repeats its own term, a `checkedBy: manual` claim too vague to check, and a guideline that talks about a "token-group" entry, which the spec doesn't have. A comment at the top of each file says what's wrong and why the schema can't catch it. They're left out of `npm run check` on purpose, and aren't meant to be copied.
 
 ## Index of every normative statement
 
-Every RFC 2119 sentence (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY) in the schema's own text — both `description` and `$comment` — extracted and indexed by `scripts/generate/extract-normative.mjs` directly from `schema/**/*.schema.yaml`, not hand-copied, and regenerated on every build (`npm run generate`, checked with `--check` in `generate:check`). Every statement below is in a `description`, where this spec keeps its rules. `$comment` holds the reasoning beside them; a requirement that turns up there is marked *(in `$comment`)* and fails `npm run check`. Each statement's id is location-based (`<dir>/<file>§<jsonPath>.<n>`), so citing one and having the schema move underneath it is a visible, checkable break rather than a silent one.
+Every requirement sentence (with MUST, MUST NOT, SHOULD, SHOULD NOT or MAY) in the schema's own text, from both `description` and `$comment`. `scripts/generate/extract-normative.mjs` pulls them straight from `schema/**/*.schema.yaml` and rebuilds this list on every build (`npm run generate`, checked by `generate:check`). Nobody copies them by hand.
+
+Every statement below is in a `description`, which is where this spec keeps its rules. `$comment` holds the reasoning beside them. A requirement found in a `$comment` is marked *(in `$comment`)*, and fails `npm run check`.
+
+Each statement's id is based on where it lives (`<dir>/<file>§<jsonPath>.<n>`). So if the schema moves under a citation, the id breaks visibly instead of quietly pointing at the wrong thing.
 
 {/* dsds:normative-index */}
 
-*Generated from the v{{VERSION}} schemas by `scripts/generate/extract-normative.mjs` — do not edit by hand. 16 statements: 12 MUST, 1 MUST NOT, 3 SHOULD, 0 SHOULD NOT, 0 MAY.*
+*Generated from the v{{VERSION}} schemas by `scripts/generate/extract-normative.mjs` — do not edit by hand. 19 statements: 14 MUST, 2 MUST NOT, 3 SHOULD, 0 SHOULD NOT, 0 MAY.*
 
 ### common
 
@@ -221,6 +535,11 @@ Every RFC 2119 sentence (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY) in the schema'
 
 - **MUST** — A section item's own `id` is optional, but a conforming consumer MUST be able to address every item. <small>`common/id§(root).1`</small>
 - **MUST** — When an item has no `id`, consumers MUST derive one from the item's own text so content has a consistent id. <small>`common/id§(root).2`</small>
+
+#### common/ref
+
+- **MUST NOT** — A conforming consumer derives the reverse direction and MUST NOT require it to be written on the target as well. <small>`common/ref§rel.1`</small>
+- **MUST** — Where an object has a field named for a kind of pointer, that kind MUST go in the field, not in `refs` (DSDS-25). <small>`common/ref§rel.2`</small>
 
 ### entries
 
@@ -239,6 +558,7 @@ Every RFC 2119 sentence (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY) in the schema'
 #### metadata/system-metadata
 
 - **MUST** — When this list is present, every other `platform` value used anywhere in the document MUST match one of these. <small>`metadata/system-metadata§[allOf][1].platforms.1`</small>
+- **MUST** — Every relative `sourceFiles` path in the project MUST be read from here when it's set (DSDS-11). <small>`metadata/system-metadata§[allOf][1].sourceRoot.1`</small>
 
 ### sections
 

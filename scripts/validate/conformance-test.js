@@ -15,7 +15,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { rootDir, loadYaml } = require("../lib");
+const { rootDir, loadYaml, entryFieldOrder } = require("../lib");
 const { validateDoc, RULES } = require("./validate");
 
 const FIXTURES_DIR = path.join(rootDir, "examples/invalid");
@@ -81,8 +81,23 @@ for (const file of files) {
   }
 
   const doc = loadYaml(filePath);
-  const { errors, warnings } = validateDoc(doc, { filePath });
+  const { errors, warnings, findings } = validateDoc(doc, { filePath });
   const allFindings = [...errors, ...warnings];
+
+  // A check on the reference validator, not on the fixture: when one part of an entry fails,
+  // Ajv can also report the entry's allowed fields as "unevaluated". validate.js drops those
+  // (isFalseUnevaluated), since they send a reader to fix the wrong field. Six fixtures here
+  // used to produce them.
+  const bogus = (findings || []).filter((f) => {
+    if (!/must NOT have unevaluated properties/.test(f.message)) return false;
+    const field = (f.pointer || "").split("/")[1];
+    return field !== undefined && f.pointer.split("/").length === 2 && entryFieldOrder(doc.kind).includes(field);
+  });
+  if (bogus.length) {
+    console.error(`✗ ${file}: reported declared field(s) as unevaluated: ${bogus.map((f) => f.pointer).join(", ")}`);
+    ok = false;
+    continue;
+  }
 
   if (rejectedBy === "semantic") {
     // A rule can legitimately fire as either - a project-scope finding is a warning until

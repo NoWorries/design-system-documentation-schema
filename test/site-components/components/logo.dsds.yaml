@@ -23,16 +23,12 @@ sections:
         statement: Omit the label attribute when the logo sits next to visible text that already names it (the default — decorative, aria-hidden). Set label only when the logo is used standalone, with no adjacent text.
         checks:
           - href: ../../../scripts/checks/axe-audit.mjs
-            rel: test
+            role: test
         checkedBy: automated
       - level: must-not
         statement: Edit site/assets/dsds.svg directly to change the mark — this component only loads and recolors whatever's there; it does not own the artwork.
         checkedBy: manual
 
-refs:
-  - to: spec-nav
-    rel: part-of
-    note: Rendered at 2rem in the nav bar's title area, aria-hidden (the adjacent title text already names the site).
 
 
 sourceFiles:

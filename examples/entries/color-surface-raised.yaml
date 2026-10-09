@@ -19,8 +19,6 @@ sections:
 refs:
   - to: color.surface.default
     rel: relates-to
-  - href: ./tokens.dtcg.json
-    rel: file
-    role: color.surface.raised
 
 tokenType: color
+source: ./tokens.dtcg.json

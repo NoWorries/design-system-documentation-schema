@@ -1,8 +1,10 @@
 kind: entry
 id: empty-state
 name: Empty State
-description: A pattern shown in place of a list or grid that has no content yet.
-purpose: Tells the user why an area is empty and what to do next, instead of leaving a blank surface.
+description: >-
+  A pattern shown in place of a list or grid that has no content yet. Tells the
+  user why an area is empty and what to do next, instead of leaving a blank
+  surface.
 
 sections:
   - kind: guidelines

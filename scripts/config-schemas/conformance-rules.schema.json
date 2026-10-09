@@ -11,7 +11,8 @@
       "name",
       "enforcement",
       "title",
-      "description"
+      "description",
+      "fix"
     ],
     "properties": {
       "id": {
@@ -40,6 +41,16 @@
       "description": {
         "type": "string",
         "minLength": 1
+      },
+      "fix": {
+        "type": "string",
+        "minLength": 1,
+        "description": "How to fix a finding, in one or two sentences. Printed as the hint in validate.js/lint-docs.js --json output and in the rule's section on the Conformance page."
+      },
+      "retired": {
+        "type": "string",
+        "pattern": "^\\d+\\.\\d+\\.\\d+$",
+        "description": "The version that retired this rule. A retired rule keeps its id, so the id is never reused, and declares enforcement: none."
       },
       "note": {
         "type": "string",
@@ -83,6 +94,20 @@
             "name": {
               "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
               "description": "An implementation key in scripts/validate/lint-docs.js."
+            }
+          }
+        }
+      },
+      {
+        "if": {
+          "required": [
+            "retired"
+          ]
+        },
+        "then": {
+          "properties": {
+            "enforcement": {
+              "const": "none"
             }
           }
         }

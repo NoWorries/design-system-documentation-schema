@@ -2,6 +2,8 @@
 
 A standard, machine-readable format for design system documentation.
 
+**DTCG describes values. CEM describes APIs. DSDS describes how, when and why.**
+
 ---
 
 ## What is DSDS?
@@ -41,13 +43,13 @@ DSDS is built to sit alongside the formats that already own a layer. **If anothe
 | Format | Layer it owns | The DSDS field |
 |---|---|---|
 | [DTCG](https://www.w3.org/community/reports/design-tokens/CG-FINAL-format-20251028/) (W3C Design Tokens) | Token values, types, aliases | A token entry's `source`; a theme's `source` |
-| [Custom Elements Manifest](https://github.com/webcomponents/custom-elements-manifest) (CEM), or any standard contract document | Component API contract, already generated | A component's `specs` (`rel: contract`) |
+| [Custom Elements Manifest](https://github.com/webcomponents/custom-elements-manifest) (CEM), or any standard contract document | Component API contract, already generated | A component's `specs` |
 | `.tsx`, `.vue`, `.swift`, framework typings — whatever a generator reads | Component source, per platform | A component's `sourceFiles` |
-| [Component Story Format](https://storybook.js.org/docs/api/csf) (CSF), Storybook, or an equivalent | Stories and live demos | A `refs`/`examples` entry with `rel: storybook` |
-| A test or lint rule — vitest, axe-core, stylelint, ESLint | Whether a guideline actually holds | A guideline's `checks` (`rel: test`, `rel: lint-rule`) |
-| WCAG, ARIA APG, MDN, an internal RFC | Why a guideline exists | A guideline's `evidence` (`rel: external-link`) |
+| [Component Story Format](https://storybook.js.org/docs/api/csf) (CSF), Storybook, or an equivalent | Stories and live demos | A `refs`/`examples` entry with `rel: demo` |
+| A test or lint rule — vitest, axe-core, stylelint, ESLint | Whether a guideline actually holds | A guideline's `checks`, with `role: test`, `lint-rule` or `agent-test` |
+| WCAG, ARIA APG, MDN, an internal RFC | Why a guideline exists | A guideline's `evidence` |
 | Figma or another design tool | Design artifacts | A `refs` entry with `rel: design`, or `metadata.preview` |
-| npm, or any package registry | Distribution | A component's `imports[].package`, or `rel: package` |
+| npm, or any package registry | Distribution | A component's `imports[].package`, or `rel: source` |
 | [JSON Schema](https://json-schema.org/) draft 2020-12 | Editor validation of the DSDS file itself | The document's own `$schema` key |
 | Any vendor or tool | Anything not listed | `$extensions`, keyed by namespace |
 
@@ -59,12 +61,14 @@ Full detail, with a worked example for each, is on the site's **[Interoperabilit
 
 Two pages on the site cover what it takes to follow the spec:
 
-- **[Conformance](https://designsystemdocspec.org/conformance)** — the four conformance classes, the three enforcement tiers, all 23 rules, how a project's scope gets worked out, and how a component's status works when it ships on more than one platform.
+- **[Conformance](https://designsystemdocspec.org/conformance)** — the four conformance classes, the three enforcement tiers, all 25 rules, how a project's scope gets worked out, and how a component's status works when it ships on more than one platform.
+- **[Specification](https://designsystemdocspec.org/specification)** — the normative definition of DSDS in numbered sections: what a document must contain, and what validators and consumers must do. Every requirement names the schema file, rule or test vector that enforces it.
+- **[Processing model](https://designsystemdocspec.org/processing)** — what a consumer works out from a document: which item a `#` address names, where a reused rule's content comes from, what replaces a deprecated value. Normative, with test vectors.
 - **[Stability](https://designsystemdocspec.org/stability)** — what's safe to build tooling on, what can still change before 1.0, how to bring a 0.15.2 document up to date, and what has to be true before 1.0 ships.
 
 If you're writing a tool, read the rules from [`schema/conformance-rules.yaml`](schema/conformance-rules.yaml) rather than from a page. `npm run check` keeps that file honest: for the semantic rules, every rule in the file has to exist in `scripts/validate/validate.js`, and every rule in the validator has to exist in the file.
 
-The last seven rules are focused on style/organization. `DSDS-17` through `DSDS-23` are suggestions on the ordering conventions in the **[Style guide](https://designsystemdocspec.org/style-guide)**, or [STYLE_GUIDE.md](STYLE_GUIDE.md) if you'd rather read it in the repo. What order an object's fields go in, and what order entries, sections, and guideline items come in. These seven rules only warn. `npm run lint` prints them and still exits 0. Ignore all seven and your document still conforms.
+Order is covered by the **[Style guide](https://designsystemdocspec.org/style-guide)**, or [STYLE_GUIDE.md](STYLE_GUIDE.md) if you'd rather read it in the repo. `dsds-format` puts every object's fields in order and groups combos, so you never do that by hand. The orders that are a reading choice — entries, sections, guideline items — are three warning-only lint rules (`DSDS-18`, `DSDS-19`, `DSDS-21`). Order never affects whether a document conforms.
 
 > [!NOTE]
 > **Credit where due:** DSDS's conformance design follows thinking from the [Adobe Spectrum Design Data specification](https://opensource.adobe.com/spectrum-design-data/spec/). Props to them.
@@ -94,7 +98,7 @@ One term per concept, so a reader and a generator mean the same thing by it. The
 
 Every schema and field is described in the **documentation site at [designsystemdocspec.org](https://designsystemdocspec.org/)**. But all schema docs are generated directly from the schema—so read the YAML files directly if that's your kind of thing.
 
-- **[Overview](https://designsystemdocspec.org/)** — What DSDS is, the entry/section model, design principles, humans & agents, and interoperability with DTCG/CEM/Storybook. For conformance classes, the `DSDS-01`–`DSDS-11` semantic rule catalog, and stability guarantees, see [Conformance](#conformance) below.
+- **[Overview](https://designsystemdocspec.org/)** — What DSDS is, the entry/section model, design principles, humans & agents, and interoperability with DTCG/CEM/Storybook. For conformance classes, the rule catalog, and stability guarantees, see [Conformance](#conformance) below.
 - **[Quick Start](https://designsystemdocspec.org/quickstart.html)** — Document structure, entry kinds, the section system, and minimal examples for every entry kind.
 - **[Extending the schema](https://designsystemdocspec.org/extending.html)** — `$extensions`, custom kinds, and profiles: the three ways to go beyond what the spec ships with, and when to reach for each.
 - **[Interoperability](https://designsystemdocspec.org/interoperability)** — every format DSDS points at instead of restating: DTCG, CEM, CSF/Storybook, tests, standards, design tools.
@@ -109,7 +113,7 @@ That page is generated from [STYLE_GUIDE.md](STYLE_GUIDE.md), so edit the root f
 
 ## Repository layout
 
-- **`schema/`** — The split JSON Schema source (`common/`, `metadata/`, `entries/`, `sections/`), plus the auto-generated `dsds.bundled.yaml` / `dsds.bundled.schema.json` and the `DSDS-01`–`DSDS-23` `conformance-rules.yaml` catalog.
+- **`schema/`** — The split JSON Schema source (`common/`, `metadata/`, `entries/`, `sections/`), plus the auto-generated `dsds.bundled.yaml` / `dsds.bundled.schema.json` and the `DSDS-01`–`DSDS-25` `conformance-rules.yaml` catalog.
 - **`examples/`** — Validated example documents: full base documents, standalone entries per kind, quickstart snippets, interop pairs, and one `invalid/` fixture per semantic rule.
 - **`test/site-components/`** — A regression corpus documenting this repo's own `site/components/` web components as DSDS entries (dogfooding), checked on every `npm run check`.
 - **`scripts/`** — Bundling, validation, composition, and the static site generator.
@@ -134,7 +138,11 @@ node scripts/validate/validate.js my-system.dsds.yaml
 
 If your system is split across files via `rel: file`, cross-file `to:` refs are resolved automatically, bounded to the directory of the file you validate (and its subdirectories — not a parent or cousin directory). An otherwise-unresolved target reports as a warning, not a hard failure — add `--strict` (`npm run validate -- --strict`) to promote those to failures once your project is clean.
 
-Reference `https://designsystemdocspec.org/v0.21.2/dsds.bundled.yaml` from your DSDS files via the `$schema` keyword for editor autocompletion and inline validation.
+Add `--json` for a machine-readable report: each finding carries its rule id, a JSON Pointer to the exact spot in your document, a fix hint, and a link to the rule's documentation. `--help` lists every option. `scripts/validate/lint-docs.js` (the advisory tier) takes the same `--json` and `--help` flags.
+
+To put a document's fields in the style guide's order, run `node scripts/format/format.js my-system.dsds.yaml` (`dsds-format` once installed). It only moves lines, so text and comments stay as they are. Add `--check` to change nothing and exit 1 if a file needs formatting.
+
+Reference `https://designsystemdocspec.org/v0.22.0/dsds.bundled.yaml` from your DSDS files via the `$schema` keyword for editor autocompletion and inline validation.
 
 For document structure, composing hand-split fragments (`scripts/tools/compose.js`), and authoring narrative pages with schema-driven property tables, see the **[Quick Start docs page](https://designsystemdocspec.org/quickstart.html)** and [How the schema is organized](https://designsystemdocspec.org/schema.html#how-the-schema-is-organized).
 
@@ -177,7 +185,7 @@ For a documentation-only edit (no schema/example changes), just commit the `site
 
 ## Contributing
 
-This is an early-stage specification (currently DSDS 0.21.2). Feedback and contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for what a rule, example, or schema change needs to land, and [SECURITY.md](SECURITY.md) to report a vulnerability.
+This is an early-stage specification (currently DSDS 0.22.0). Feedback and contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for what a rule, example, or schema change needs to land, and [SECURITY.md](SECURITY.md) to report a vulnerability.
 
 ### Contributors
 

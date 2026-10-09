@@ -175,19 +175,25 @@ sections:
 
 ### Steps let you break down a process, guide, or checklist
 
-A `steps` section is an ordered procedure or an unordered checklist (`ordered: false`). Each item can point back at the guideline it verifies via `checks` (`rel: depends-on`). A self-check checklist:
+A `steps` section is an ordered procedure or an unordered checklist (`ordered: false`). When a step verifies a guideline, the guideline lists the step in its own `checks`, next to any test or lint rule that checks it. Everything that checks a rule is then in one place. A self-check checklist, and the rule it checks:
 
 <ds-code language="yaml" label="" slot="example" wrap>
 sections:
+  - kind: guidelines
+    for: all
+    items:
+      - id: aria-label-required
+        level: must
+        statement: Give an icon-only button an aria-label.
+        checkedBy: manual
+        checks:
+          - to: button#icon-only-buttons-have-an-aria-label
   - kind: steps
     for: agent
     ordered: false
     title: Self-check before shipping
     items:
       - title: Icon-only buttons have an aria-label
-        checks:
-          - to: button#aria-label-required
-            rel: depends-on
 </ds-code>
 
 </ds-guide-section>

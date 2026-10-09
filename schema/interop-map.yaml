@@ -20,7 +20,7 @@
 
 - layer: Component API contract, already generated
   format: "[Custom Elements Manifest](https://github.com/webcomponents/custom-elements-manifest) (CEM), or any standard contract document"
-  field: "A component's `specs` (`rel: contract`)"
+  field: "A component's `specs`"
 
 - layer: Component source, per platform
   format: "`.tsx`, `.vue`, `.swift`, framework typings — whatever a generator reads"
@@ -28,15 +28,15 @@
 
 - layer: Stories and live demos
   format: "[Component Story Format](https://storybook.js.org/docs/api/csf) (CSF), Storybook, or an equivalent"
-  field: "A `refs`/`examples` entry with `rel: storybook`"
+  field: "A `refs`/`examples` entry with `rel: demo`"
 
 - layer: Whether a guideline actually holds
   format: A test or lint rule — vitest, axe-core, stylelint, ESLint
-  field: "A guideline's `checks` (`rel: test`, `rel: lint-rule`)"
+  field: "A guideline's `checks`, with `role: test`, `lint-rule` or `agent-test`"
 
 - layer: Why a guideline exists
   format: WCAG, ARIA APG, MDN, an internal RFC
-  field: "A guideline's `evidence` (`rel: external-link`)"
+  field: "A guideline's `evidence`"
 
 - layer: Design artifacts
   format: Figma or another design tool
@@ -44,7 +44,7 @@
 
 - layer: Distribution
   format: npm, or any package registry
-  field: "A component's `imports[].package`, or `rel: package`"
+  field: "A component's `imports[].package`, or `rel: source`"
 
 - layer: Editor validation of the DSDS file itself
   format: "[JSON Schema](https://json-schema.org/) draft 2020-12"

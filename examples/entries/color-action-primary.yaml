@@ -22,11 +22,9 @@ sections:
 refs:
   - to: color.action.primary.hover
     rel: relates-to
-  - href: ./tokens.dtcg.json
-    rel: file
-    role: color.action.primary.*
 
 tokenType: color
+source: ./tokens.dtcg.json
 
 # must: an exhaustive allowlist - this fill color has only been
 # contrast-tested against these two surfaces, so anything else is

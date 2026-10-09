@@ -11,7 +11,7 @@ description: "How to order things inside a DSDS document, so every document read
 
 How to order things inside a DSDS document, so every document reads the same way no matter who wrote it.
 
-None of this changes whether a document is valid. The schema accepts any order. Seven warning-only rules (`DSDS-17` through `DSDS-23` in the [advisory tier](conformance.html#enforcement-tiers)) point out anything out of order when you run `npm run lint`. Nothing here can fail `npm run check:all`. See [Tooling](#tooling) for what gets checked automatically and what's left to you.
+None of this changes whether a document is valid. The schema accepts any order. Most of this guide you never have to apply by hand: `dsds-format` puts every field in its place and groups combos. The orders that are a reading choice — entries, sections, guideline items — are only advice, and `dsds-lint` points out where a document departs from them. See [Tooling](#tooling) for which is which.
 
 ## The schema is the style guide
 
@@ -23,7 +23,7 @@ Everything below is one of a few ideas, applied to a different part of a documen
 
 **Field order comes from the schema. List order comes from this guide.** Each schema follows the style guide for field order. Which entry, section, or item comes first in a list is something a schema can't express, so this guide describes it.
 
-**Broad to specific.** The widest thing leads: `guidelines` before `steps`, `when-to-use` before `how-to-use`, `for: all` before `for: agent`, a section about the whole entry before one about a single tag.
+**Broad to specific.** The widest thing leads: `guidelines` before `steps`, `when-to-use` before `how-to-use`, `for: all` before `for: agent`.
 
 **Nothing comes before the thing it's built on.** Tokens before the themes that override them, themes before the components that use them. Read top to bottom and you meet every idea before anything that depends on it.
 
@@ -39,7 +39,7 @@ Everything below is one of a few ideas, applied to a different part of a documen
 
 A base document is the outermost object. Its fields go in the order seen in [`base.schema.yaml`](/v{{VERSION}}/base.schema.yaml). `shared` entries follow [`shared.schema.yaml`](/v{{VERSION}}/shared.schema.yaml).
 
-`DSDS-20` checks base documents. `DSDS-17` checks shared entries, falling back to `shared.schema.yaml` when an object has no `kind`.
+`dsds-format` applies both, falling back to `shared.schema.yaml` for an object with no `kind`.
 
 ### Entry order, inside `entries[]`
 
@@ -75,13 +75,13 @@ Follow the high-level order:
 2. **Then that kind's own fields**, defined in `entries/<kind>.schema.yaml`. A custom kind has no file of its own, so should follow the high-level guidance.
 3. **Then `$extensions`.** All information that adds to the schema goes last.
 
-If a document is ordered differently, the `DSDS-17` warning prints the whole order it expected.
+`dsds-format` puts an entry's fields in this order. A field the schema doesn't declare stays right after the field it followed.
 
 ### A trait's own fields
 
 A component's `traits` lead with `traitType`, then `kind`, then the rest of the order [`entries/component.schema.yaml`](/v{{VERSION}}/entries/component.schema.yaml) declares. `traitType` goes first because it answers the question a reader has: is this a variant the caller configures, or a state the component can be in? `kind` follows, saying whether the value is a `boolean` toggle or an `enum` with named `values`. The two are independent — `hover` is a boolean state, `size` an enum variant.
 
-`DSDS-22` checks this, along with the order of each value inside an `enum` trait. It reads both orders out of `entries/component.schema.yaml` at runtime, so this guide holds no second copy of either.
+`dsds-format` applies this, along with the field order of each value inside an `enum` trait. It reads both orders out of `entries/component.schema.yaml` at runtime, so this guide holds no second copy of either.
 
 ---
 
@@ -116,13 +116,14 @@ That's the order [`sections/section.schema.yaml`](/v{{VERSION}}/sections/section
 
 ### Within `guidelines`: how broad, then who it's for
 
-Guidelines sorts content by: **how broad first, who it's for second.** `for: agent`, `framing: when-to-use` still comes before a `for: all` `framing: how-to-use`, because breadth is settled first. Audience only sorts within one breadth tier — the three above.
+Guidelines sorts content by: **how broad first, who it's for second.** `for: agent`, `framing: when-to-use` still comes before a `for: all` `framing: how-to-use`, because breadth is settled first. Audience only sorts within one breadth tier — the two below.
 
 Guidelines should lead with when to use, then describe how to use it. That's the order [`sections/guidelines.schema.yaml`](/v{{VERSION}}/sections/guidelines.schema.yaml) lists its `framing` values in:
 
 1. **`framing: when-to-use`:** Does it make sense to use?
 2. **`framing: how-to-use`:** If so, how do you use it? Leaving `framing` out means this — it's the default that file declares.
-3. **Tagged guidelines:** A section that declares `tags` — the accessibility rules, say, or the mobile-only ones. Narrow instruction should follow general information, so these come last whatever their `framing` is. The first tag is the scope; any others are just keywords.
+
+A section's `tags` say what it's about — the accessibility rules, say, or the mobile-only ones. They don't change where it sits. Within a tier, put narrow sections after general ones if that reads better; no rule checks it.
 
 Sections in the same breadth tier are then ordered by how broad the audience is. The order [`sections/section.schema.yaml`](/v{{VERSION}}/sections/section.schema.yaml) lists its `for` values in:
 
@@ -143,23 +144,23 @@ sections:
     items: [...]                    # framing: how-to-use (default)
 
   - kind: guidelines
-    for: agent
-    items: [...]                    # same framing as above, narrower
-                                    # audience — so audience breaks the tie
-
-  - kind: guidelines
     for: all
     title: Accessibility
-    tags: [accessibility]
-    items:                          # `tags` above puts this in the narrowest
-      - level: must                 # tier: after every how-to-use section
-        statement: Give it a name.  # above, whatever their `for` is
+    tags: [accessibility]           # says what it's about; doesn't move it
+    items:                          # same tier and audience as the section
+      - level: must                 # above, so it can go here, after the
+        statement: Give it a name.  # general rules
         checkedBy: assisted
         tags: [accessibility]
       - level: must
         statement: Keep focus visible.
         checkedBy: assisted
         tags: [accessibility]
+
+  - kind: guidelines
+    for: agent
+    items: [...]                    # same framing as above, narrower
+                                    # audience — so audience breaks the tie
 
   - kind: definitions
     context: anatomy
@@ -234,7 +235,7 @@ A combo reads as one sentence: this subject, at this strength, with these things
 A ref answers what it points at before what kind of pointer it is. That's the order [`common/ref.schema.yaml`](/v{{VERSION}}/common/ref.schema.yaml) lists its fields in:
 
 1. **`to` or `href`:** What does this point at? `to` for something in this document, `href` for anything outside it. Exactly one of the two.
-2. **`rel`:** What kind of pointer is it?
+2. **`rel`:** What kind of pointer is it? Left out in a field named for one kind of pointer (`uses`, `extends`, `alternatives`, `evidence`, `checks`, `refines`, `replacedBy`, `specs`), where the field says it.
 3. **`role`:** What does the thing being pointed at do here?
 4. **`note`:** Anything else worth saying about the connection.
 
@@ -246,8 +247,7 @@ A ref answers what it points at before what kind of pointer it is. That's the or
 kind: component
 id: badge
 name: Badge
-description: A small status indicator, attached to another element.
-purpose: Draws attention to a count, state, or category without interrupting the layout it's attached to.
+description: A small status indicator, attached to another element. Draws attention to a count, state, or category without interrupting the layout it's attached to.
 metadata:
   tags: [status, indicator, count]
   since: 1.2.0
@@ -289,9 +289,8 @@ sections:
       - term: Dot
         definition: The minimal variant with no visible label, just a colored indicator.
 
-related:
-  - to: avatar
-    rel: pairs-with
+alternatives:
+  - to: tag
 refs:
   - href: https://github.com/org/ds/react/badge
     rel: source
@@ -300,7 +299,6 @@ sourceFiles:
     file: ./src/Badge.tsx
 specs:
   - href: ./contracts/badge.contract.json
-    rel: contract
 traits:
   - traitType: variant
     kind: enum
@@ -322,32 +320,37 @@ combos:
 
 ## Tooling
 
-Seven warning-only rules check this guide. They live in `scripts/validate/lint-docs.js`, are listed in `schema/conformance-rules.yaml` as `enforcement: advisory`, and run with `npm run lint`.
+Two tools cover this guide, split by whether the order is a fact or a choice.
 
-### What's checked
+- **`dsds-format` applies the orders that have one right answer.** Every field order comes from a schema file, and combos are an unordered set of rules. It moves lines and nothing else: text, comments and wrapping stay as they are, a comment moves with the field below it, and the result has to hold exactly the same data as before. `dsds-format --check` changes nothing and exits 1 if a file needs formatting, for CI. In this repo, `npm run format` runs it and `npm run check` runs the check.
+- **`dsds-lint` reports the orders that are a reading choice** — entries, sections, guideline items. An author can have a reason to break them, so they stay advice: three warning-only rules in `schema/conformance-rules.yaml`, run with `npm run lint`.
 
-Every rule in this guide is checked except one, and that one can't be. The right-hand column is the warning you'd get.
+Until 0.22.0, four more lint rules (`DSDS-17`, `DSDS-20`, `DSDS-22`, `DSDS-23`) reported the field and combo orders. `dsds-format` replaced them.
 
-| Rule | Where | Checked by |
+### What's covered
+
+Every rule in this guide is covered except one, and that one can't be.
+
+| Rule | Where | Covered by |
 |---|---|---|
-| A base document's own fields | [§1](#1-base-documents-and-shared-entries) | `DSDS-20` |
-| A `shared` entry's own fields | [§1](#1-base-documents-and-shared-entries) | `DSDS-17` |
+| A base document's own fields | [§1](#1-base-documents-and-shared-entries) | `dsds-format` |
+| A `shared` entry's own fields | [§1](#1-base-documents-and-shared-entries) | `dsds-format` |
 | Entry order inside `entries[]` | [§1](#1-base-documents-and-shared-entries) | `DSDS-21` |
-| An entry's own fields | [§2](#2-entries) | `DSDS-17` |
-| A trait's own fields | [§2](#2-entries) | `DSDS-22` |
-| A trait value's own fields | [§2](#2-entries) | `DSDS-22` |
-| A `metadata` block's fields | [§3](#3-metadata) | `DSDS-22` |
-| A section's own fields | [§4](#4-sections) | `DSDS-22` |
+| An entry's own fields | [§2](#2-entries) | `dsds-format` |
+| A trait's own fields | [§2](#2-entries) | `dsds-format` |
+| A trait value's own fields | [§2](#2-entries) | `dsds-format` |
+| A `metadata` block's fields | [§3](#3-metadata) | `dsds-format` |
+| A section's own fields | [§4](#4-sections) | `dsds-format` |
 | Same-kind sections kept together | [§4](#4-sections) | `DSDS-18` |
 | Section kind order | [§4](#4-sections) | `DSDS-18` |
 | Breadth, then audience, among `guidelines` | [§4](#4-sections) | `DSDS-18` |
-| An item's own fields | [§5](#5-section-items) | `DSDS-22` |
+| An item's own fields | [§5](#5-section-items) | `dsds-format` |
 | Guideline items by `level` | [§5](#5-section-items) | `DSDS-19` |
-| A combo's own fields | [§6](#6-refs-and-combos) | `DSDS-22` |
-| Combos for one subject kept together, then by level | [§6](#6-refs-and-combos) | `DSDS-23` |
-| A ref's own fields | [§6](#6-refs-and-combos) | `DSDS-22` |
+| A combo's own fields | [§6](#6-refs-and-combos) | `dsds-format` |
+| Combos for one subject kept together, then by level | [§6](#6-refs-and-combos) | `dsds-format` |
+| A ref's own fields | [§6](#6-refs-and-combos) | `dsds-format` |
 | Order within one entry kind, or one `level` | [§1](#1-base-documents-and-shared-entries), [§5](#5-section-items) | can't be — it's a judgment call |
 
-**Every sort reads a field.** `DSDS-18` used to decide whether a section was "about one tag" by intersecting its items' `tags` — the one judgment it made from what the items said rather than from the section's own fields. It reads the section's own `tags` now, so adding a rule to a section no longer changes where the section has to sit.
+**Every sort reads a field, and classification never sorts.** `DSDS-18` used to put a section declaring `tags` in its own, narrowest tier. That gave `tags` two jobs, so tagging a section to classify it could also make it out of order. Since 0.22.0 `tags` only classifies, and `DSDS-18` sorts on `framing` and `for` alone.
 
-**Field order has one source: the schema files.** The tables on the [Schema page](schema.html) are generated from each schema file's own order, `DSDS-17`, `DSDS-20` and `DSDS-22` read that same order when they run, and [§2](#2-entries) tells you to follow it. So you can read the authoring order off a property table, and the other way round.
+**Field order has one source: the schema files.** The tables on the [Schema page](schema.html) are generated from each schema file's own order, `dsds-format` reads that same order when it runs, and [§2](#2-entries) tells you to follow it. So you can read the authoring order off a property table, and the other way round.

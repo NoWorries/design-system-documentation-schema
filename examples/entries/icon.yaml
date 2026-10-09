@@ -19,7 +19,6 @@ sections:
         statement: Avoid as the only content of something clickable - icon button carries the accessible name and touch target that needs.
         alternatives:
           - to: icon-button
-            rel: alternative-to
 
   - kind: guidelines
     for: all

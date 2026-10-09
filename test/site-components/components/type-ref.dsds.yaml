@@ -16,7 +16,6 @@ sections:
         statement: Use inline, within a property's type text or a description, to cross-reference another schema definition. For a list of related definitions below a description, use cross-refs instead — it's built for a group of links, not one inline reference.
         alternatives:
           - to: cross-refs
-            rel: alternative-to
         checkedBy: manual
 
   - kind: guidelines
@@ -26,10 +25,6 @@ sections:
         statement: Rendering waits for DOMContentLoaded when the document is still loading, since the link text is read from this element's own light-DOM textContent — a single requestAnimationFrame tick is not a reliable guarantee that light-DOM children have finished parsing.
         checkedBy: manual
 
-refs:
-  - to: def-section
-    rel: part-of
-    note: Used inside a definition's property types and description text to link to another definition.
 
 
 sourceFiles:

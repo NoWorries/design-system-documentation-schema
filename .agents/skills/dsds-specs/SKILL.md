@@ -2,7 +2,7 @@
 name: dsds-specs
 description: Everything about Design System Doc Spec (DSDS) — entry kinds, sections, schema structure, and how it fits into the ecosystem. Use when authoring, reviewing, or reasoning about DSDS specs and `*.dsds.yaml` files.
 metadata:
-  version: 0.21.2
+  version: 0.22.0
 ---
 
 # Design System Doc Spec (DSDS)
@@ -15,14 +15,15 @@ DSDS documents a graph of **entries** (a system, a component, a token, a theme, 
 
 When you need precise field-level details beyond this skill, consult these in order:
 
-1. **Bundled schema**: `https://designsystemdocspec.org/v0.21.2/dsds.bundled.schema.json` (or `node_modules/design-system-documentation-schema/schema/dsds.bundled.schema.json` if installed as a dependency)
+1. **Bundled schema**: `https://designsystemdocspec.org/v0.22.0/dsds.bundled.schema.json` (or `node_modules/design-system-documentation-schema/schema/dsds.bundled.schema.json` if installed as a dependency)
 2. **Schema architecture reference**: https://designsystemdocspec.org/schema#how-the-schema-is-organized (and [Conformance](https://designsystemdocspec.org/conformance) for conformance classes and the full rule catalog)
 3. **Quick start with examples**: https://designsystemdocspec.org/quickstart
    — and the [style guide](https://designsystemdocspec.org/style-guide)
    for the field order every example follows. The schema permits any order;
-   the style guide picks one. It is a convention, not a constraint — the
-   `DSDS-17`–`DSDS-23` rules that report deviations are advisory warnings
-   from `npx dsds-lint`, never a validation failure.
+   the style guide picks one. It is a convention, not a constraint.
+   `npx dsds-format` applies the field order for you; the orders that are a
+   reading choice (sections, guideline items) are advisory warnings from
+   `npx dsds-lint`, never a validation failure.
 4. **GitHub source** (split schema + examples): https://github.com/somerandomdude/design-system-documentation-schema/tree/main/schema
 
 Key pages for field-level detail:
@@ -67,7 +68,7 @@ description: A styled checkbox input for boolean or indeterminate selection.
 A **base document** (the root `index.dsds.yaml`, or any file meant to hold more than one entry) requires `schemaVersion`, `name`, and a non-empty `entries` array. System-wide facts live on that list's own `kind: system` entry:
 
 ```yaml
-schemaVersion: "0.21.2"
+schemaVersion: "0.22.0"
 name: Acme Design System
 
 entries:
@@ -101,9 +102,9 @@ Every section kind can also carry `freeform`: headed, nestable prose alongside i
 Two optional fields on any section kind make it findable without matching on a human-written `title`:
 
 - **`context`** — the job the section is doing: `anatomy`, `terms`, `keyboard`, `events`, or a namespaced custom value. Set it whenever the section has one of those jobs, so a tool can find "the anatomy table" by field rather than by heading text.
-- **`tags`** — what the whole section is about (`[accessibility]`). The first tag is the primary one. A tag-scoped section sorts after the broader sections covering the same entry.
+- **`tags`** — what the whole section is about (`[accessibility]`). The first tag is the primary one. Tags only classify a section; they don't change where it sits.
 
-A `guidelines` item that claims `checkedBy: automated` must point `checks` at what actually runs the check — `rel: test` (the design system's own code), `rel: lint-rule` (static analysis), or `rel: agent-test` (a fixture that runs an AI agent against the guideline and grades what it generates). An `agent-test` usually reports a pass rate or a judged rubric rather than a strict pass/fail, so pair it with `checkedBy: assisted` unless its assertion really is deterministic.
+A `guidelines` item that claims `checkedBy: automated` must list in `checks` what actually runs the check, as an `href` with `role` saying which kind: `test` (the design system's own code), `lint-rule` (static analysis), or `agent-test` (a fixture that runs an AI agent against the guideline and grades what it generates). A pointer in `checks` has no `rel`: the field says it. An agent eval usually reports a pass rate or a judged rubric rather than a strict pass/fail, so pair it with `checkedBy: assisted` unless its assertion really is deterministic.
 
 ## A Component's Own Fields
 
@@ -121,14 +122,14 @@ Mark a section `for: agent` for firm, ready-to-act notes a person wouldn't need 
 
 ## Schema Validation
 
-The bundled schema is published at `https://designsystemdocspec.org/v0.21.2/dsds.bundled.schema.json`, using JSON Schema draft 2020-12. Validate with:
+The bundled schema is published at `https://designsystemdocspec.org/v0.22.0/dsds.bundled.schema.json`, using JSON Schema draft 2020-12. Validate with:
 
 ```bash
 npx dsds-validate <files-or-globs>   # is this document allowed?
 npx dsds-lint <files-or-globs>       # is this documentation good? (advisory)
 ```
 
-See the `dsds-validate` skill for the full rule catalog (`DSDS-01`–`DSDS-23`) and how to interpret failures.
+See the `dsds-validate` skill for the full rule catalog (`DSDS-01`–`DSDS-25`) and how to interpret failures.
 
 ## Deep-Dive References
 

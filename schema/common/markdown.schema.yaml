@@ -1,5 +1,5 @@
 $schema: https://json-schema.org/draft/2020-12/schema
-$id: https://designsystemdocspec.org/v0.21.2/common/markdown.schema.yaml
+$id: https://designsystemdocspec.org/v0.22.0/common/markdown.schema.yaml
 title: Markdown
 type: string
 description: Markdown content, including headings, tables, code fences, etc.

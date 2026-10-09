@@ -187,7 +187,7 @@ $extensions:
     status: {status: stable}
   refs:
     - href: https://www.w3.org/WAI/WCAG21/quickref/
-      rel: external-link
+      rel: relates-to
   sections:
     - kind: guidelines
       for: all
@@ -222,14 +222,14 @@ $extensions:
     alt: A toolbar with one filled primary button and two lower-emphasis secondary buttons.
   ref:
     href: https://storybook.acme.example/?path=/story/button--primary
-    rel: storybook`,
+    rel: demo`,
   },
   "common-example-list": {
     file: "examples/entries/button.yaml",
     yaml: `- title: One primary action per surface
   showcase: {kind: image, url: https://cdn.acme.example/ds/showcase/button-primary-surface.png}
 - title: Loading state
-  ref: {href: ./stories/button.stories.tsx, rel: storybook}`,
+  ref: {href: ./stories/button.stories.tsx, rel: demo}`,
   },
   "common-extensions": {
     file: "examples/entries/button.yaml",
@@ -257,7 +257,7 @@ $extensions:
   "common-ref": {
     file: "examples/entries/button.yaml",
     yaml: `- href: https://example.atlassian.net/browse/DS-482
-  rel: external-link
+  rel: relates-to
   role: Tracks the two-primary-buttons issue
   note: Filed after a usability test surfaced the ambiguity.
 # or, pointing inside this document instead of outside it:
@@ -266,10 +266,25 @@ $extensions:
   },
   "common-ref-list": {
     file: "examples/entries/button.yaml",
-    yaml: `- to: button
-  rel: depends-on
+    yaml: `- to: getting-started
+  rel: relates-to
 - href: https://storybook.acme.example
-  rel: storybook`,
+  rel: demo`,
+  },
+  "common-ref-target": {
+    file: "examples/entries/link.yaml",
+    yaml: `# In a field named for one kind of pointer, like a guideline's evidence:
+- href: https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html
+  role: WCAG 2.2 SC 2.4.4 (A)
+# or, the shorthand for an outside link:
+- https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html`,
+  },
+  "common-ref-targets": {
+    file: "examples/entries/button.yaml",
+    yaml: `checks:
+  - href: ./tests/button.a11y.test.ts
+    role: test
+  - to: release-checklist#focus-visible-check`,
   },
   "common-requirement-level": {
     file: "examples/entries/button.yaml",
@@ -299,13 +314,12 @@ $extensions:
     - date: 2026-05-01
       by: human:ahormati
       note: Copy and contrast ratios re-checked; no changes needed.
-  context: Introduced to give agents extra information for how to use this entry.
   updated:
     date: 2026-06-02
     note: Added the loading trait and its guideline.
   origin:
     method: generated
-    author: machine-generated
+    author: generated
     note: Generated from custom-elements.json (CEM schemaVersion 2.1.0) by cem-to-dsds.
   $extensions:
     com.acme: {...}`,
@@ -330,7 +344,6 @@ $extensions:
   reviewed:
     - date: 2026-05-01
       by: human:ahormati
-  context: Introduced to give agents extra information for how to use this entry.
   updated: {date: 2026-06-02, note: Added the loading trait and its guideline.}
   origin: {method: authored, author: human}
   preview: {kind: image, url: https://cdn.acme.example/ds/showcase/button.png}
@@ -354,7 +367,6 @@ $extensions:
   reviewed:
     - date: 2026-05-01
       by: human:ahormati
-  context: Why this system exists, for an agent reading it.
   updated: {date: 2026-06-02}
   origin: {method: authored, author: human}
   $extensions:
@@ -365,16 +377,15 @@ $extensions:
     yaml: `id: empty-state
 kind: entry
 name: Empty State
-description: Composition of components shown when a view has no content to display yet.
-purpose: Tells the user why an area is empty and what to do next.
+description: Composition of components shown when a view has no content to display yet. Tells the user why an area is empty and what to do next.
 metadata:
   status: {status: stable}
-related:
-  - to: error-state
-    rel: alternative-to
+uses:
+  - to: button
 extends:
   - to: base-dialog
-    rel: extends
+alternatives:
+  - to: error-state
 refs:
   - href: https://github.com/acme/ds/tree/main/patterns/empty-state
     rel: source
@@ -402,11 +413,11 @@ $extensions:
     yaml: `id: button
 kind: component
 name: Button
-description: Triggers an action.
-purpose: Gives users a single, consistent way to trigger an action.
+description: Triggers an action. Gives users a single, consistent way to trigger an action.
 metadata: {status: {status: stable}}
-related: [{to: link, rel: alternative-to}]
-extends: [{to: base-dialog, rel: extends}]
+uses: [{to: color.action.primary}]
+extends: [{to: base-dialog}]
+alternatives: [{to: link}]
 refs: [{href: https://github.com/acme/ds/react/button, rel: source}]
 sections:
   - kind: guidelines
@@ -431,8 +442,7 @@ combos:
     items: [disabled]
     note: A control can't be simultaneously loading and disabled...
 specs:
-  - rel: contract
-    href: ./contracts/button.contract.json
+  - href: ./contracts/button.contract.json
     role: DS Contracts`,
   },
   "entries-component-traitsetby": {
@@ -444,8 +454,7 @@ component  # the component sets this on its own, like hover or loading`,
     file: "examples/entries/button.yaml",
     yaml: `id: loading
 name: Loading
-description: Shows a spinner in place of the label and blocks interaction while active.
-purpose: Prevents duplicate submissions while an action is in flight.
+description: Shows a spinner in place of the label and blocks interaction while active, so an action can't be submitted twice.
 examples:
   - title: Default loading state
     showcase: {kind: image, url: https://cdn.acme.example/ds/showcase/button-loading.png}
@@ -456,8 +465,7 @@ since: 1.4.0`,
     yaml: `id: acme-design-system
 kind: system
 name: Acme Design System
-description: Acme's cross-platform design system.
-purpose: One source of truth for how Acme builds and documents interfaces.
+description: Acme's cross-platform design system. One source of truth for how Acme builds and documents interfaces.
 metadata:
   version: 1.4.0
   organization: Acme Corp
@@ -465,9 +473,9 @@ metadata:
   license: MIT
   platforms: [react, web-component]
   status: {status: stable}
-related: [{to: acme-brand-system, rel: pairs-with}]
-extends: [{to: base-design-system, rel: extends}]
-refs: [{to: button, rel: composes}]
+extends: [{to: base-design-system}]
+uses: [{to: button}]
+refs: [{to: acme-brand-system, rel: relates-to}]
 sections:
   - kind: section
     for: all
@@ -481,13 +489,10 @@ $extensions:
     yaml: `id: dark
 kind: theme
 name: Dark
-description: Inverted-luminance theme for low-light surfaces and user preference.
-purpose: Lets a product opt into a dark color scheme without redefining every token.
+description: Inverted-luminance theme for low-light surfaces and user preference. Lets a product opt into a dark color scheme without redefining every token.
 metadata: {status: {status: stable}}
-related: [{to: light, rel: pairs-with}]
 extends:
   - to: light
-    rel: extends
 refs:
   - href: https://www.figma.com/file/acme-dark-theme
     rel: design
@@ -505,11 +510,10 @@ colorScheme: dark`,
     yaml: `id: space-4
 kind: token
 name: Space 4
-description: A single step on the base spacing scale - 4 times the 4px base unit.
-purpose: Keeps spacing consistent across components without hand-picked pixel values.
+description: A single step on the base spacing scale - 4 times the 4px base unit. Keeps spacing consistent across components without hand-picked pixel values.
 metadata: {status: {status: stable}, group: space}
-related: [{to: space-8, rel: pairs-with}]
-extends: [{to: space-base, rel: extends}]
+extends: [{to: space-base}]
+alternatives: [{to: space-8}]
 refs: [{href: https://www.figma.com/file/acme-spacing-scale, rel: design}]
 sections:
   - kind: guidelines
@@ -531,7 +535,6 @@ combos:
   title: Terms
   description: Words used in this component's copy.
   context: terms
-  metadata: {status: {status: stable}}
   items:
     - term: OK
       definition: To confirm an action.
@@ -551,13 +554,11 @@ combos:
   title: When to use
   description: Whether button is the right choice for this action.
   context: acme.fit-check
-  metadata: {status: {status: stable}}
   items:
     - statement: Do not use button when the action navigates to a new URL; use the link entry instead.
       level: must-not
       alternatives:
         - to: link
-          rel: alternative-to
   freeform:
     - title: Why this matters
       body: A button that navigates breaks browser back/forward and "open in new tab."
@@ -572,7 +573,6 @@ combos:
   title: Pre-release checklist
   description: Run through before shipping a change to this component.
   context: acme.checklist
-  metadata: {status: {status: stable}}
   items:
     - title: Focus ring is visible in both light and dark themes.
     - title: Loading state announces to screen readers.
@@ -591,7 +591,6 @@ combos:
   title: Troubleshooting
   description: Common problems and how to fix them.
   context: acme.troubleshooting
-  metadata: {status: {status: stable}}
   items:
     - title: Note
       body: Generic items have no fixed fields - use freeform for prose instead.
@@ -621,7 +620,7 @@ examples:
     ref: {href: ./install.sh, rel: file}
 refs:
   - to: getting-started
-    rel: see-also
+    rel: relates-to
 items:
   - title: Peer dependencies
     body: React 18+ and a theme provider higher in the tree.
@@ -1494,6 +1493,9 @@ function buildLlmsTxt(entries, version, definitionCount) {
       `definition instead of the whole bundle; manifest.json lists all of them under \`definitions\`.`,
   );
   lines.push(
+    `- [llms-small.txt](${SITE_URL}/llms-small.txt): a primer of about 5k tokens - the core model, the field and kind lists, one worked example, and how to validate. Read this first if you're short on context`,
+  );
+  lines.push(
     `- [llms-full.txt](${SITE_URL}/llms-full.txt): every guide's full text plus the bundled schema, in one file for one-request ingestion`,
   );
   lines.push(
@@ -1539,6 +1541,64 @@ function buildLlmsFullTxt(guideDocs, bundledSchema, version) {
     "",
   );
   return lines.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd() + "\n";
+}
+
+/**
+ * llms-small.txt - a primer of about 5k tokens, for an agent that needs to read or write a DSDS
+ * document but can't spend 100k+ tokens on llms-full.txt. The prose is hand-written in
+ * site/content/fragments/llms-small.md; every list of field names, kinds and values in it is a
+ * {{PLACEHOLDER}} filled from the schema files here, so the primer can't drift from the schema.
+ */
+const LLMS_SMALL_SOURCE = path.join(CONTENT_DIR, "fragments", "llms-small.md");
+const LLMS_SMALL_EXAMPLE = path.join(EXAMPLES_DIR, "quickstart", "12-shared-sections.yaml");
+// ~4 characters per token. Over this, the primer has stopped being small; trim it.
+const LLMS_SMALL_MAX_CHARS = 22000;
+
+function buildLlmsSmallTxt(version) {
+  const { declaredProps, declaredEnum } = require("../lib");
+  const code = (values) => values.map((v) => `\`${v}\``).join(", ");
+  const kindEnum = (d) => d.properties.kind.oneOf.find((m) => m.enum);
+  const ownFields = (file) => declaredProps(file).filter((f) => !["kind", "id", "metadata"].includes(f));
+
+  const kindFields = ["component", "token", "theme", "system"].map((kind) => {
+    const fields = ownFields(`entries/${kind}.schema.yaml`);
+    if (kind === "system") {
+      fields.push(...declaredProps("metadata/system-metadata.schema.yaml").map((f) => `metadata.${f}`));
+    }
+    return `- \`${kind}\`: ${code(fields)}`;
+  });
+
+  const values = {
+    VERSION: version,
+    SITE_URL,
+    BASE_FIELDS: code(declaredProps("base.schema.yaml")),
+    ENTRY_ENVELOPE: code(declaredProps("entries/entry.schema.yaml")),
+    ENTRY_METADATA: code([
+      ...declaredProps("metadata/entry-metadata.schema.yaml"),
+      ...declaredProps("metadata/metadata.schema.yaml"),
+    ]),
+    ENTRY_KINDS: code(declaredEnum("entries/entry.schema.yaml", kindEnum).values),
+    KIND_FIELDS: kindFields.join("\n"),
+    SECTION_ENVELOPE: code(declaredProps("sections/section.schema.yaml")),
+    SECTION_KINDS: code(declaredEnum("sections/section.schema.yaml", kindEnum).values),
+    LEVELS: code(declaredEnum("common/requirement-level.schema.yaml", (d) => d).values),
+    REL_VALUES: code(
+      declaredEnum("common/ref.schema.yaml", (d) => d.$defs.rel.oneOf.find((m) => m.enum)).values,
+    ),
+    EXAMPLE: fs.readFileSync(LLMS_SMALL_EXAMPLE, "utf-8").trim(),
+  };
+
+  const text = fs.readFileSync(LLMS_SMALL_SOURCE, "utf-8").replace(/\{\{([A-Z_]+)\}\}/g, (match, name) => {
+    if (!(name in values)) throw new Error(`llms-small.md uses {{${name}}}, which build-site.js doesn't fill.`);
+    return values[name];
+  });
+  if (text.length > LLMS_SMALL_MAX_CHARS) {
+    throw new Error(
+      `llms-small.txt is ${text.length} characters (~${Math.round(text.length / 4)} tokens), over the ` +
+        `${LLMS_SMALL_MAX_CHARS}-character budget. Trim site/content/fragments/llms-small.md.`,
+    );
+  }
+  return text.trimEnd() + "\n";
 }
 
 /** "component" -> "Component", "token-group" -> "Token group". */
@@ -1591,7 +1651,7 @@ function buildManifest(pages, version) {
 
   // Every schema file's own small markdown mirror, not just the entry and section kinds. The
   // build emits 23 of these; the manifest linked the 9 that happen to be kinds, so the other 14
-  // - `common-ref` among them, the shape behind refs/related/extends/checks/evidence/specs/
+  // - `common-ref` among them, the shape behind refs/extends/alternatives/checks/evidence/specs/
   // alternatives - were reachable from nothing at all. An agent that can fetch 4 KB for one
   // definition will; one offered only the 115 KB whole-schema mirror guesses instead.
   const definitions = pages
@@ -2131,8 +2191,12 @@ async function build() {
             fs.copyFileSync(path.join(fixturesSrc, file), path.join(fixturesDest, file));
           }
         }
+        const vectorsSrc = path.join(EXAMPLES_DIR, "vectors");
+        if (fs.existsSync(vectorsSrc)) {
+          fs.cpSync(vectorsSrc, path.join(suiteDir, "examples", "vectors"), { recursive: true });
+        }
         console.log(
-          `  ✓  site/dist/v${version}/conformance-suite/  ← schema/conformance-suite.json + examples/invalid/\n`,
+          `  ✓  site/dist/v${version}/conformance-suite/  ← schema/conformance-suite.json + examples/invalid/ + examples/vectors/\n`,
         );
       }
 
@@ -2181,6 +2245,8 @@ async function build() {
     "utf-8",
   );
 
+  fs.writeFileSync(path.join(DIST_DIR, "llms-small.txt"), buildLlmsSmallTxt(version), "utf-8");
+
   const bundledSchemaForFullTxt = fs.existsSync(bundledSchemaPath)
     ? loadSchemaYaml(bundledSchemaPath)
     : {};
@@ -2208,7 +2274,7 @@ async function build() {
 
   console.log(
     `  ✓  site/dist/sitemap.xml, site/dist/llms.txt, site/dist/llms-full.txt, ` +
-      `site/dist/AGENTS.md, site/dist/manifest.json, site/dist/id/entry/*.json  ← ${sitemapEntries.length} pages indexed\n`,
+      `site/dist/llms-small.txt, site/dist/AGENTS.md, site/dist/manifest.json, site/dist/id/entry/*.json  ← ${sitemapEntries.length} pages indexed\n`,
   );
 
   console.log(

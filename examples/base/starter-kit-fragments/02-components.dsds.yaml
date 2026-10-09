@@ -24,15 +24,13 @@ entries:
         items:
           - level: should
             statement: Limit each surface to one primary button.
-    refs:
+    uses:
       - to: color.action.primary
-        rel: depends-on
 
 # Reusable content that isn't a design-system artifact - not an entry, so
 # it lives in this array instead of `entries` above (see entry.schema.yaml's
 # own $comment for why `kind: shared` moved here instead). It documents no
-# artifact of its own - nothing else in this file `depends-on`/`composes`
-# it - it only exists to be pointed at, via an entryId#itemId ref (see
+# artifact of its own - nothing else in this file `uses` it - it only exists to be pointed at, via an entryId#itemId ref (see
 # common/ref.schema.yaml's `to`) and the `same-as` rel. A shared entry is
 # never its own navigable destination.
 shared:

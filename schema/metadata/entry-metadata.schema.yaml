@@ -1,5 +1,5 @@
 $schema: https://json-schema.org/draft/2020-12/schema
-$id: https://designsystemdocspec.org/v0.21.2/metadata/entry-metadata.schema.yaml
+$id: https://designsystemdocspec.org/v0.22.0/metadata/entry-metadata.schema.yaml
 title: EntryMetadata
 description: Information about a single entry, on top of the fields every metadata object shares.
 $comment: >-
@@ -16,33 +16,18 @@ $comment: >-
   instead, since only this schema applies there.
 
 allOf:
-  - $ref: https://designsystemdocspec.org/v0.21.2/metadata/metadata.schema.yaml
+  - $ref: https://designsystemdocspec.org/v0.22.0/metadata/metadata.schema.yaml
   - type: object
     properties:
       preview:
-        $ref: https://designsystemdocspec.org/v0.21.2/common/showcase.schema.yaml
+        $ref: https://designsystemdocspec.org/v0.22.0/common/showcase.schema.yaml
         description: A visual sample of this entry, either a media file or a link.
         $comment: For a code sample, use a section's own examples instead, which can point at a real file or story.
       since:
-        $ref: https://designsystemdocspec.org/v0.21.2/common/since.schema.yaml
+        $ref: https://designsystemdocspec.org/v0.22.0/common/since.schema.yaml
         description: The version this entry was first introduced.
       status:
-        description: >-
-          A lifecycle status, optionally scoped to one platform - or a list
-          of them, one per platform, when an entry has reached different
-          maturity on each.
-        $comment: >-
-          There is deliberately no `overall` field. Entry's overall status
-          should be based on the aggregate of all platform status entries.
-          How to aggregate is the consumer's call. A bare object with no
-          `platform` is the entry's overall status.
-        oneOf:
-          - $ref: "#/$defs/statusEntry"
-          - type: array
-            minItems: 1
-            description: One status per platform.
-            items:
-              $ref: "#/$defs/statusEntry"
+        $ref: "#/$defs/status"
       group:
         type: string
         description: A group name this entry belongs to, for example "color.action" on a set of related tokens, or "action" on a family of related components.
@@ -59,6 +44,24 @@ allOf:
         example: [btn]
 
 $defs:
+  status:
+    description: >-
+      A lifecycle status, optionally scoped to one platform - or a list
+      of them, one per platform, when an entry has reached different
+      maturity on each.
+    $comment: >-
+      There is deliberately no `overall` field. Entry's overall status
+      should be based on the aggregate of all platform status entries.
+      How to aggregate is the consumer's call. A bare object with no
+      `platform` is the entry's overall status. A component's trait and
+      trait value use this same shape.
+    oneOf:
+      - $ref: "#/$defs/statusEntry"
+      - type: array
+        minItems: 1
+        description: One status per platform.
+        items:
+          $ref: "#/$defs/statusEntry"
   statusEntry:
     description: One lifecycle status, optionally scoped to a single platform.
     $comment: >-
@@ -70,7 +73,7 @@ $defs:
         required: [status]
         properties:
           platform:
-            $ref: https://designsystemdocspec.org/v0.21.2/common/id.schema.yaml
+            $ref: https://designsystemdocspec.org/v0.22.0/common/id.schema.yaml
             description: Which platform this status applies to.
             $comment: >-
               This field isn't necessary if only one platform exists. It is
@@ -80,13 +83,25 @@ $defs:
           status:
             $ref: "#/$defs/statusValue"
           since:
-            $ref: https://designsystemdocspec.org/v0.21.2/common/since.schema.yaml
+            $ref: https://designsystemdocspec.org/v0.22.0/common/since.schema.yaml
             description: The version this platform (or the system overall) reached this status.
           deprecationNotice:
             type: string
             description: What to use instead, and why.
             $comment: Required when `status` is deprecated.
             example: Use `icon-button` instead - this variant never got contrast-tested and is being removed in 2.0.
+          replacedBy:
+            $ref: https://designsystemdocspec.org/v0.22.0/common/ref.schema.yaml#/$defs/targets
+            description: "What replaces this, when `status` is deprecated (replaced-by). No `rel`: this field says it."
+            $comment: >-
+              Sits next to `deprecationNotice`, where a reader finds out the
+              thing is going away. Point at an entry (`icon-button`), or one
+              trait value (`button#variant.primary`). Several successors
+              means several pointers, and `deprecationNotice` says when to
+              choose which. In one platform's status, it applies on that
+              platform. Read from the target, it's "replaces".
+            example:
+              - to: button#variant.primary
           note:
             type: string
             description: Free-text context.
@@ -97,6 +112,10 @@ $defs:
           properties: { status: { const: deprecated } }
         then:
           required: [deprecationNotice]
+      - if:
+          required: [replacedBy]
+        then:
+          properties: { status: { const: deprecated } }
 
   statusValue:
     type: string

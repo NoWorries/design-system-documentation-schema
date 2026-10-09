@@ -16,7 +16,6 @@ sections:
         statement: Use exactly once, at the very top of a page, to render its h1. For any heading further down the page, use heading instead — a second header on the same page would mean two h1s.
         alternatives:
           - to: heading
-            rel: alternative-to
         checkedBy: manual
 
   - kind: guidelines
@@ -26,16 +25,15 @@ sections:
         statement: Use the default slot only for short inline content next to the title (e.g. a status badge) — it renders inside the h1, so anything longer breaks the page's one-h1-per-page outline.
         checkedBy: manual
 
-refs:
-  - to: code
-    rel: composes
-    note: Renders the "Source:" line, and any backtick spans in description, as inline ds-code.
 
+
+uses:
+  - to: code
+    note: Renders the "Source:" line, and any backtick spans in description, as inline ds-code.
 
 sourceFiles:
   - platform: web-component
     file: ../../../site/components/header.js
-
 imports:
   - platform: web-component
     code: |

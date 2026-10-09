@@ -1,8 +1,9 @@
 kind: component
 id: button
 name: Button
-description: Triggers an action.
-purpose: Gives users a single, consistent way to trigger an action across the product.
+description: >-
+  Triggers an action. Gives users a single, consistent way to trigger an action
+  across the product.
 
 metadata:
   tags: [actions, form]

@@ -9,7 +9,7 @@ kind: entry
 #     own $comment).
 #   - scale -> a ref to one token in the `space` group. There's no
 #     `token-group` kind to point at as a single unit (see
-#     metadata.group's own $comment) - a spacing scale composes from the
+#     metadata.group's own $comment) - a spacing scale is built from the
 #     individual tokens that share `metadata.group: space` instead.
 #     Step order, resolved values, and per-step usage notes live on the
 #     tokens themselves, not duplicated here. See space-4.yaml for one.
@@ -32,7 +32,6 @@ sections:
       - title: Steps over arbitrary values
         body: Prefer scale steps over arbitrary pixel values in component styles.
 
-refs:
+uses:
   - to: space-4
-    rel: composes
     note: "One step on the `space` scale - every token with `metadata.group` set to \"space\" is a step on this same scale. Step order, resolved values, and per-step usage notes are documented on the tokens, not duplicated here."

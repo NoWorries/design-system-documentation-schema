@@ -30,6 +30,7 @@ const DIR_GROUPS = [
 // The site's entire nav, now that every schema definition lives on one Schema page.
 const TOP_LINKS = [
   { label: "Overview", href: "index.html", slug: "index" },
+  { label: "Specification", href: "specification.html", slug: "specification" },
   { label: "Quick start", href: "quickstart.html", slug: "quickstart" },
   { label: "Extending the schema", href: "extending.html", slug: "extending" },
   { label: "Schema", href: "schema.html", slug: "schema" },
@@ -41,6 +42,7 @@ const TOP_LINKS = [
 // actually got built, so a footer link can't rot into a 404 any more than a nav link can.
 const FOOTER_LINKS = [
   { label: "Conformance", href: "conformance.html", slug: "conformance" },
+  { label: "Processing model", href: "processing.html", slug: "processing" },
   { label: "Stability", href: "stability.html", slug: "stability" },
   { label: "Interoperability", href: "interoperability.html", slug: "interoperability" },
   { label: "Security", href: "security.html", slug: "security" },

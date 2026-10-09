@@ -19,7 +19,6 @@ sections:
         statement: Don't wrap a single action in a group - a lone action is just a button.
         alternatives:
           - to: button
-            rel: alternative-to
 
   - kind: guidelines
     for: all
@@ -27,6 +26,5 @@ sections:
       - level: may
         statement: Order buttons by how often each action is taken, most frequent first, unless a platform convention dictates otherwise.
 
-refs:
+uses:
   - to: button
-    rel: composes

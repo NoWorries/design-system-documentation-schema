@@ -23,7 +23,7 @@ sections:
         statement: The label attribute is REQUIRED — it's the only accessible name this button has, since it renders no visible text. The component sets it as the button's aria-label on every attribute change.
         checks:
           - href: ../../../scripts/checks/axe-audit.mjs
-            rel: test
+            role: test
         checkedBy: automated
       - level: should-not
         statement: Never duplicate the icon's meaning as visible text next to the button — if a visible label is wanted, use a plain labeled Button instead of an IconButton.

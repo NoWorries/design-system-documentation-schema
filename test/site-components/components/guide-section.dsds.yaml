@@ -16,7 +16,6 @@ sections:
         statement: Use for a narrative guide step that pairs prose with a worked code example (e.g. Quick start). For a schema definition's own reference block, use def-section instead — it adds the eyebrow, type badge, and property list a guide step doesn't need.
         alternatives:
           - to: def-section
-            rel: alternative-to
         checkedBy: manual
 
   - kind: guidelines
@@ -26,19 +25,19 @@ sections:
         statement: Only slot content into "example" when the step actually has a code sample — the right column is checked once at connect time and simply omitted (not rendered empty) when nothing is assigned to that slot.
         checkedBy: manual
 
-refs:
+uses:
   - to: code
-    rel: composes
     note: Slotted into "example" as the right-hand column's worked example.
+
+
+refs:
   - to: def-section
     rel: relates-to
     note: Same two-column visual language as ds-def-section's layout="split", minus the schema-specific heading it renders itself.
 
-
 sourceFiles:
   - platform: web-component
     file: ../../../site/components/guide-section.js
-
 imports:
   - platform: web-component
     code: |

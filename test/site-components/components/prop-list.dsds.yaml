@@ -26,14 +26,11 @@ sections:
         statement: Rows sort required-first, then conditional, then plain, and re-sorting happens automatically at render time — do not pre-sort ds-prop children before authoring them.
         checkedBy: manual
 
-refs:
-  - to: def-section
-    rel: part-of
-    note: Renders each schema definition's own property table.
-  - to: badge
-    rel: composes
-    note: The "at least 1 required" marker on a conditional prop reuses ds-badge's experimental variant styling.
 
+
+uses:
+  - to: badge
+    note: The "at least 1 required" marker on a conditional prop reuses ds-badge's experimental variant styling.
 
 sourceFiles:
   - platform: web-component
@@ -56,7 +53,6 @@ traits:
     kind: boolean
     id: conditional
     description: Marks a property row as conditionally required. Renders an "at least 1 required" badge (see ds-badge's experimental variant) instead of the plain "required" text.
-
 combos:
   - subject: required
     level: must-not

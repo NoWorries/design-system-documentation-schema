@@ -7,4 +7,4 @@ description: An entry whose ref sets both `to` and `href` - the schema requires 
 refs:
   - to: some-other-entry
     href: https://example.com/thing
-    rel: see-also
+    rel: relates-to

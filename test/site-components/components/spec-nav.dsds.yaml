@@ -23,11 +23,11 @@ sections:
         statement: Every light-DOM `<a>` intended to highlight as active MUST carry a slug attribute — highlighting matches slug against the active attribute, not the href or link text.
         checkedBy: manual
 
-refs:
-  - to: logo
-    rel: composes
-    note: Rendered at 2rem in the title area, replaced by the mobile menu toggle at narrow widths.
 
+
+uses:
+  - to: logo
+    note: Rendered at 2rem in the title area, replaced by the mobile menu toggle at narrow widths.
 
 sourceFiles:
   - platform: web-component
@@ -40,7 +40,6 @@ imports:
         <a href="/quickstart" slug="quickstart">Quick start</a>
         <a href="/schema" slug="schema">Schema</a>
       </ds-spec-nav>
-
 traits:
   - traitType: state
     kind: boolean

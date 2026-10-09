@@ -19,8 +19,6 @@ sections:
 refs:
   - to: color.action.primary
     rel: relates-to
-  - href: ./tokens.dtcg.json
-    rel: file
-    role: color.action.primary.hover
 
 tokenType: color
+source: ./tokens.dtcg.json

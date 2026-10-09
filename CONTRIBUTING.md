@@ -98,7 +98,7 @@ One more runs in CI without gating it — the **advisory tier**, meant to be
 visible rather than blocking:
 
 ```bash
-npm run lint  # documentation-quality rules (DSDS-12–DSDS-16)
+npm run lint  # documentation-quality rules (DSDS-13–DSDS-21)
 ```
 
 It can't fail a build; its findings are warnings by design.
@@ -134,8 +134,10 @@ a wrapper for its own sake — if a script isn't listed, it doesn't exist.
 | `npm run check:docs` | Markdown mirrors, internal links, nav/footer page coverage, this reference, the edge function's page list, CSS. Reads `site/dist/` — build first. |
 | `npm run build` | Regenerates every generated artifact, then builds the site into `site/dist/`. Launches no browser. Warns if it changed a *released* (git-tagged) version's published artifacts; add `-- --strict-versions` to make that fatal. |
 | `npm run dev` | Local preview server. |
-| `npm run validate` | Validate files you name: `npm run validate -- path/to/doc.dsds.yaml`. Add `-- --strict` to promote project-scope warnings to failures. |
-| `npm run lint` | Advisory tier (`DSDS-12`+): documentation-quality warnings. Always exits 0. |
+| `npm run validate` | Validate files you name: `npm run validate -- path/to/doc.dsds.yaml`. Add `-- --strict` to promote project-scope warnings to failures, or `-- --json` for a machine-readable report. `-- --help` lists every option. |
+| `npm run lint` | Advisory tier (`DSDS-13`+): documentation-quality warnings. Always exits 0. Takes `--json` and `--help` too. |
+| `npm run format` | Puts every example's fields in the style guide's order (`dsds-format`). Moves lines only. `npm run check` runs it with `--check` and fails if any file needs it. Pass paths after `--` to format other files. |
+| `npm run resolve` | Prints what a consumer works out from the files you name, as JSON: every item's address, reused content, reverse relationships, successors, and any problems. The reference implementation of the [processing model](https://designsystemdocspec.org/processing): `npm run resolve -- <files…>`. `npm run check` checks it against every test vector in `examples/vectors/`; after deliberately changing the model, `node scripts/resolve/vectors.js --update` rewrites the expected answers, and the diff is what to review. |
 
 ### One-off tools
 
@@ -145,6 +147,7 @@ a wrapper for its own sake — if a script isn't listed, it doesn't exist.
 | `npm run generate:check` | Asserts those artifacts are current without rewriting them. Part of `check`; useful alone when a check fails and you want to know whether it's just staleness. |
 | `npm run migrate` | Converts a 0.15.2 `.dsds.json` document to a `.dsds.yaml` one in the current shape: `npm run migrate -- <files-or-dirs…> [--dry-run]`. This is the whole migration from 0.15.2 — no second step. Best-effort — run `validate` on the output. |
 | `node scripts/tools/migrate-to-0.21.js` | For a document already in 0.20.x YAML: adds `traitType` to every component trait and removes `setBy`, in place: `<files-or-dirs…> [--dry-run]`. Not an npm script, and not needed after `npm run migrate`. |
+| `node scripts/tools/migrate-to-0.22.js` | For a document in 0.21.x YAML: folds `purpose` and `metadata.context` into `description`, moves section `metadata` under `$extensions`, maps `origin.author` to its three values, merges `rel` values and moves pointers into their named fields, in place: `<files-or-dirs…> [--dry-run]`. Keeps comments. Not an npm script, and not needed after `npm run migrate`. |
 | `npm run compose` | Concatenates hand-split `.dsds.yaml` fragments into one document before validation. |
 | `npm run bump-version` | The release driver. Rewrites every version reference, regenerates, builds, checks, commits, tags. |
 | `npm run og:generate` | Regenerates `site/assets/og-image.png`. Needs Chromium. Run it and commit the result only when the logo or the accent/text tokens change — the build does not do this for you. |

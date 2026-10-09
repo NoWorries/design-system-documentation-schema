@@ -71,7 +71,7 @@ for (const family of FAMILIES) {
 
 // A schema file's own `example:` blocks are what an agent copies - they render into the
 // Schema page's property tables and into the bundled schema. An example that contradicts
-// DSDS-22's order teaches the wrong order from the most authoritative place there is, so walk
+// the field order (what dsds-format applies) teaches the wrong order from the most authoritative place there is, so walk
 // every one of them. Found exactly that: component.schema.yaml's `specs` example listed
 // `rel` before `href`.
 const EXAMPLE_ORDERS = (() => {

@@ -172,19 +172,171 @@ function entriesIn(doc) {
 // under - one generic walk instead of a separate case for each place a ref can appear.
 // `combos` subjects/items (bare strings, not {to, rel} objects) are a deliberately different,
 // lighter pointer concept and aren't picked up here.
-function findRefs(value, at, out) {
+//
+// Each result carries two locations: `at`, a readable label for messages (`sections[0].refs[1]`),
+// and `pointer`, a JSON Pointer relative to `value` (`/sections/0/refs/1`) for tools. They're
+// built separately because a key can contain a dot (`$extensions` keys always do), so `at`
+// can't be turned back into a pointer reliably.
+//
+// A pointer in a field named for one kind of pointer (`evidence`, `checks`, ...) has no `rel`
+// of its own; the field implies it (FIELD_RELS), and each result carries it as `rel`, with
+// `field` set to the field's name.
+const FIELD_RELS = {
+  uses: "uses",
+  replacedBy: "replaced-by",
+  extends: "extends",
+  alternatives: "alternative-to",
+  evidence: "cites",
+  checks: "checked-by",
+  specs: "contract",
+  refines: "refines",
+};
+
+function findRefs(value, at, out, pointer = "", impliedRel = null, field = null) {
   if (Array.isArray(value)) {
-    value.forEach((item, i) => findRefs(item, `${at}[${i}]`, out));
+    value.forEach((item, i) => findRefs(item, `${at}[${i}]`, out, `${pointer}/${i}`, impliedRel, field));
     return;
   }
   if (value && typeof value === "object") {
-    if (typeof value.to === "string" && typeof value.rel === "string") {
-      out.push({ to: value.to, rel: value.rel, at });
+    const rel = typeof value.rel === "string" ? value.rel : impliedRel;
+    if (typeof value.to === "string" && rel) {
+      out.push({ to: value.to, rel, at, pointer, ...(impliedRel && field ? { field } : {}) });
     }
     for (const [key, val] of Object.entries(value)) {
-      findRefs(val, at ? `${at}.${key}` : key, out);
+      // A field's implied rel applies to its own list items only, not to anything nested in them.
+      const implied = Array.isArray(val) && Object.prototype.hasOwnProperty.call(FIELD_RELS, key) ? FIELD_RELS[key] : null;
+      findRefs(val, at ? `${at}.${key}` : key, out, `${pointer}/${escapePointer(key)}`, implied, implied ? key : null);
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Item addresses (processing model §2): what the part after `#` in `entryId#address` names
+// ---------------------------------------------------------------------------
+
+// The field an item's id is derived from, per section kind (common/id.schema.yaml).
+const PRIMARY_TEXT = { guidelines: "statement", definitions: "term", steps: "title" };
+
+// common/id.schema.yaml's derivation: lowercase, every run of characters outside [a-z0-9]
+// becomes one dash, leading and trailing dashes trimmed. null when nothing is left.
+function deriveId(text) {
+  if (typeof text !== "string") return null;
+  const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return id || null;
+}
+
+/**
+ * Every address on one entry, as a Map of address -> [candidates]. A candidate is
+ * { target, type, source, pointer, sectionKind }: `type` is item, freeform, nested, trait or
+ * value; `source` is explicit, derived, inherited or trait. Pointers are relative to the entry.
+ *
+ * - A section item (guidelines, definitions, steps) or a freeform entry, at any depth, is
+ *   addressed by its `id`, or failing that by the id derived from its primary text.
+ * - An item with neither - a pure pointer that reuses another item through `same-as` - takes
+ *   the address of the item it reuses (the part after `#`), with source `inherited`.
+ * - Any other object inside an item that declares its own `id` is addressed by it.
+ * - A component's trait is `traitId`; one value of an enum trait is `traitId.valueId`.
+ *
+ * Use resolveAddress() to look one up: an address can be ambiguous.
+ */
+function itemAddresses(entry) {
+  const found = new Map();
+  const add = (address, candidate) => {
+    if (!address) return;
+    if (!found.has(address)) found.set(address, []);
+    found.get(address).push(candidate);
+  };
+  const isObject = (v) => v && typeof v === "object" && !Array.isArray(v);
+
+  // Explicit ids on objects nested inside an item (an example, a sub-item, ...).
+  function nested(value, pointer) {
+    if (Array.isArray(value)) {
+      value.forEach((v, i) => nested(v, `${pointer}/${i}`));
+    } else if (isObject(value)) {
+      if (typeof value.id === "string") add(value.id, { target: value, type: "nested", source: "explicit", pointer });
+      for (const [k, v] of Object.entries(value)) if (Array.isArray(v)) nested(v, `${pointer}/${escapePointer(k)}`);
+    }
+  }
+
+  function freeform(entries, pointer, sectionKind) {
+    (entries || []).forEach((f, i) => {
+      if (!isObject(f)) return;
+      const p = `${pointer}/${i}`;
+      const explicit = typeof f.id === "string";
+      add(explicit ? f.id : deriveId(f.title), { target: f, type: "freeform", source: explicit ? "explicit" : "derived", pointer: p, sectionKind });
+      freeform(f.items, `${p}/items`, sectionKind);
+    });
+  }
+
+  (Array.isArray(entry.sections) ? entry.sections : []).forEach((section, si) => {
+    if (!isObject(section)) return;
+    const sp = `/sections/${si}`;
+    (Array.isArray(section.items) ? section.items : []).forEach((item, ii) => {
+      if (!isObject(item)) return;
+      const p = `${sp}/items/${ii}`;
+      const field = PRIMARY_TEXT[section.kind];
+      const sameAs = Array.isArray(item.refs) && item.refs.find((r) => isObject(r) && r.rel === "same-as" && typeof r.to === "string");
+      if (typeof item.id === "string") {
+        add(item.id, { target: item, type: "item", source: "explicit", pointer: p, sectionKind: section.kind });
+      } else if (field && deriveId(item[field])) {
+        add(deriveId(item[field]), { target: item, type: "item", source: "derived", pointer: p, sectionKind: section.kind });
+      } else if (sameAs && sameAs.to.includes("#")) {
+        add(sameAs.to.slice(sameAs.to.indexOf("#") + 1), { target: item, type: "item", source: "inherited", pointer: p, sectionKind: section.kind });
+      }
+      for (const [k, v] of Object.entries(item)) if (Array.isArray(v)) nested(v, `${p}/${escapePointer(k)}`);
+    });
+    freeform(section.freeform, `${sp}/freeform`, section.kind);
+  });
+
+  (Array.isArray(entry.traits) ? entry.traits : []).forEach((trait, ti) => {
+    if (!isObject(trait) || typeof trait.id !== "string") return;
+    const p = `/traits/${ti}`;
+    add(trait.id, { target: trait, type: "trait", source: "trait", pointer: p });
+    for (const [k, v] of Object.entries(trait)) if (Array.isArray(v) && k !== "values") nested(v, `${p}/${escapePointer(k)}`);
+    (Array.isArray(trait.values) ? trait.values : []).forEach((value, vi) => {
+      if (isObject(value) && typeof value.id === "string") {
+        const vp = `${p}/values/${vi}`;
+        add(`${trait.id}.${value.id}`, { target: value, type: "value", source: "trait", pointer: vp });
+        for (const [k, v] of Object.entries(value)) if (Array.isArray(v)) nested(v, `${vp}/${escapePointer(k)}`);
+      }
+    });
+  });
+  return found;
+}
+
+// The address that owns a location in an entry: the candidate whose pointer is the longest
+// prefix of `pointer` (so a ref inside a guideline item belongs to that item), or null when the
+// location sits on the entry itself.
+function ownerOf(addresses, pointer) {
+  let best = null;
+  for (const [address, candidates] of addresses) {
+    for (const c of candidates) {
+      if ((pointer === c.pointer || pointer.startsWith(`${c.pointer}/`)) && (!best || c.pointer.length > best.candidate.pointer.length)) {
+        best = { address, candidate: c };
+      }
+    }
+  }
+  return best;
+}
+
+/**
+ * Looks up one address. Returns { candidate } on a match, { ambiguous: [candidates] } when it
+ * names more than one thing, or {} when it names nothing. Precedence: an id written out (an
+ * explicit `id`, or a trait's), then a derived one, then an inherited one. Two candidates at
+ * the same, highest tier are ambiguous.
+ */
+const ADDRESS_TIER = { explicit: 0, trait: 0, derived: 1, inherited: 2 };
+function resolveAddress(addresses, address) {
+  const all = addresses.get(address) || [];
+  if (!all.length) return {};
+  const best = Math.min(...all.map((c) => ADDRESS_TIER[c.source]));
+  const pool = all.filter((c) => ADDRESS_TIER[c.source] === best);
+  return pool.length === 1 ? { candidate: pool[0] } : { ambiguous: pool };
+}
+
+// RFC 6901: `~` and `/` inside a key are written as `~0` and `~1`.
+function escapePointer(key) {
+  return String(key).replace(/~/g, "~0").replace(/\//g, "~1");
 }
 
 module.exports = {
@@ -202,4 +354,11 @@ module.exports = {
   isBaseDoc,
   entriesIn,
   findRefs,
+  FIELD_RELS,
+  escapePointer,
+  PRIMARY_TEXT,
+  deriveId,
+  itemAddresses,
+  resolveAddress,
+  ownerOf,
 };

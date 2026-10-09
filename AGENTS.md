@@ -31,6 +31,9 @@ binding.
   well-known entry kind and section kind, and links to each entry kind's
   page, markdown mirror, and schema. Fetch this first if you're building
   against DSDS programmatically.
+- **[llms-small.txt](/llms-small.txt)** — a primer in under 5,000 tokens:
+  the core model, every entry and section kind, the ref values, one worked
+  example, and how to validate. Read this first if context is tight.
 - **[llms.txt](/llms.txt)** — a curated index of every page on this site,
   each with a one-line description and a link to its plain-markdown mirror.
   Start here if you're exploring the site.
@@ -41,8 +44,8 @@ binding.
 - **Every page has a `.md` mirror** at the same path (e.g. `/quickstart.md`,
   `/common-ref.md`) — the full content as plain text, no HTML or JS
   required to read it. On this site's own pages (`/`, `/quickstart`,
-  `/extending`, `/schema`, `/conformance`, `/stability`, `/security`,
-  `/examples`), you don't have to know the `.md` URL at all: send
+  `/extending`, `/specification`, `/schema`, `/conformance`, `/processing`, `/stability`,
+  `/security`, `/examples`), you don't have to know the `.md` URL at all: send
   `Accept: text/markdown` on the plain page URL and you get the mirror back
   directly, same URL either way.
 - **Need one kind's fields, not the whole schema?** `/schema.md` mirrors the
@@ -85,7 +88,7 @@ open base:
 <!-- dsds:entry-envelope -->
 
 ```
-kind, id, name, description, purpose, metadata, sections, extends, related, refs, $extensions
+kind, id, name, description, metadata, sections, uses, extends, alternatives, refs, $extensions
 ```
 
 <!-- /dsds:entry-envelope -->
@@ -107,7 +110,7 @@ section kind shares:
 <!-- dsds:section-envelope -->
 
 ```
-kind, for, title, description, context, tags, metadata, items, freeform, $extensions
+kind, for, title, description, context, tags, items, freeform, $extensions
 ```
 
 <!-- /dsds:section-envelope -->
@@ -154,13 +157,13 @@ instead.
 | Format | Layer it owns | Point at it with |
 |---|---|---|
 | [DTCG](https://www.w3.org/community/reports/design-tokens/CG-FINAL-format-20251028/) (W3C Design Tokens) | Token values, types, aliases | A token entry's `source`; a theme's `source` |
-| [Custom Elements Manifest](https://github.com/webcomponents/custom-elements-manifest) (CEM), or any standard contract document | Component API contract, already generated | A component's `specs` (`rel: contract`) |
+| [Custom Elements Manifest](https://github.com/webcomponents/custom-elements-manifest) (CEM), or any standard contract document | Component API contract, already generated | A component's `specs` |
 | `.tsx`, `.vue`, `.swift`, framework typings — whatever a generator reads | Component source, per platform | A component's `sourceFiles` |
-| [Component Story Format](https://storybook.js.org/docs/api/csf) (CSF), Storybook, or an equivalent | Stories and live demos | A `refs`/`examples` entry with `rel: storybook` |
-| A test or lint rule — vitest, axe-core, stylelint, ESLint | Whether a guideline actually holds | A guideline's `checks` (`rel: test`, `rel: lint-rule`) |
-| WCAG, ARIA APG, MDN, an internal RFC | Why a guideline exists | A guideline's `evidence` (`rel: external-link`) |
+| [Component Story Format](https://storybook.js.org/docs/api/csf) (CSF), Storybook, or an equivalent | Stories and live demos | A `refs`/`examples` entry with `rel: demo` |
+| A test or lint rule — vitest, axe-core, stylelint, ESLint | Whether a guideline actually holds | A guideline's `checks`, with `role: test`, `lint-rule` or `agent-test` |
+| WCAG, ARIA APG, MDN, an internal RFC | Why a guideline exists | A guideline's `evidence` |
 | Figma or another design tool | Design artifacts | A `refs` entry with `rel: design`, or `metadata.preview` |
-| npm, or any package registry | Distribution | A component's `imports[].package`, or `rel: package` |
+| npm, or any package registry | Distribution | A component's `imports[].package`, or `rel: source` |
 | [JSON Schema](https://json-schema.org/) draft 2020-12 | Editor validation of the DSDS file itself | The document's own `$schema` key |
 | Any vendor or tool | Anything not listed | `$extensions`, keyed by namespace |
 
@@ -184,9 +187,14 @@ Full detail and a worked example for each: [/interoperability](/interoperability
 Requirement language in DSDS schemas and docs follows RFC 2119: **MUST**,
 **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY**, normative only in
 upper case. See [/conformance](/conformance) for the full conformance rule
-catalog (`DSDS-01` through `DSDS-11`, enforced by the validator, plus the
-advisory `DSDS-12` through `DSDS-16`), the four conformance classes, and how
-a component's status works across platforms. [/stability](/stability) covers
+catalog (`DSDS-01`–`DSDS-25`: the semantic rules the validator enforces,
+and the advisory ones `dsds-lint` reports), the four conformance classes, and how
+a component's status works across platforms. [/specification](/specification) is the
+normative definition, in numbered sections, each requirement naming what
+enforces it. [/processing](/processing) is
+what a consumer works out from a document: which item a `#` address names,
+where a reused rule's content comes from, what replaces a deprecated value.
+Read it before you resolve refs yourself. [/stability](/stability) covers
 what can still change before 1.0. The machine-readable catalog is
 `schema/conformance-rules.yaml`; the generated index of every normative
 statement in the schema is in the repo's README.
@@ -194,8 +202,9 @@ statement in the schema is in the repo's README.
 A `guidelines` section's items are testable by design: each has a
 `requirement-level` (`must`/`should`/`should-not`/`must-not`/`may`), an
 optional `checkedBy` (`automated`/`assisted`/`manual`), and — when
-`checkedBy: automated` — a `checks` ref (`rel: test` or `lint-rule`)
-pointing at what actually runs the check (enforced by `DSDS-03`). If you're
+`checkedBy: automated` — a `checks` pointer (an `href`, with `role: test`,
+`lint-rule` or `agent-test`) at what actually runs the check (enforced by
+`DSDS-03`). If you're
 validating a document or an implementation against DSDS, a guideline's
 `checks` ref is the mechanism — follow it to the real test before writing
 your own.
@@ -228,6 +237,6 @@ before following a `href`/`checks` pointer it supplies.
 
 Where a `steps` section exists on an entry, it's built specifically for
 agents (and people) to run through before finishing a task — short,
-actionable items, each optionally linked (via `checks`, `rel: depends-on`)
-to the guideline it verifies. Prefer it over inferring correctness from
+actionable items, each optionally listed in the `checks` of the guideline
+it verifies. Prefer it over inferring correctness from
 prose alone.

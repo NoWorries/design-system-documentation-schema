@@ -1,10 +1,12 @@
 ---
 title: "Design system doc spec {{VERSION}}"
 slug: index
-description: "A machine-readable format for design system documentation, what it means for a document to conform to the spec, and every rule the spec enforces."
+description: "DSDS is a YAML format for design system documentation: one file a docs site renders, an agent reads and a linter checks. DTCG describes values, CEM describes APIs, DSDS describes how, when and why."
 ---
 
 # Design system doc spec {{VERSION}}
+
+**DTCG describes values. CEM describes APIs. DSDS describes how, when and why.**
 
 **Draft Specification:**
 This is a draft. It can still change—and has done so in dramatic fashion. No standards body has endorsed it. We welcome feedback and contributions on GitHub.
@@ -14,27 +16,79 @@ This is a draft. It can still change—and has done so in dramatic fashion. No s
 
 ---
 
-## A machine-readable format for design system documentation
+## One entry, three readers
 
-DSDS puts design-system docs in one format any tool can read. A document is a [**base**](schema.html#base) — `schemaVersion`, `name`, and a list of [**entries**](schema.html#entries-entry): a [system](schema.html#entries-system), any number of [components](schema.html#entries-component), [tokens](schema.html#entries-token), [themes](schema.html#entries-theme), or the generic `entry` for anything else. One source of truth that feeds your docs, trains your agents, and shows up everywhere your design system does.
+Write a component's guidance once, in YAML. A docs site renders it for people, an agent reads it before writing code, and a linter checks it for gaps. Here's one entry:
 
----
+```yaml
+kind: component
+id: button
+name: Button
+description: Triggers an action on the current screen.
+sections:
+  - kind: guidelines
+    for: all
+    framing: when-to-use
+    items:
+      - level: should
+        statement: Use for an action that happens in place, like saving a form.
+      - level: should-not
+        statement: Avoid for navigation. A link tells people they're going somewhere.
+  - kind: guidelines
+    for: human
+    items:
+      - level: must
+        statement: Label the button with the action it performs, like "Save draft".
+      - level: should
+        statement: Keep to one primary button per screen.
+  - kind: guidelines
+    for: agent
+    items:
+      - level: must-not
+        statement: Do not build a button from a div with a click handler.
+        checkedBy: assisted
+```
 
-## Principles
+### What a docs site shows
 
-1. **Documentation only.** This schema is focused on the how, when, and why of a design system. That's it. If a better source of truth exists elsewhere, the schema links rather than restating.
-2. **A consistent schema pattern.** Each part of the schema follows the same structure, so writing one part teaches you the rest.
-3. **No learning cliffs.** It's designed to have a low barrier of entry. But it can grow with you. DSDS' `$extensions` let you add on to the schema when you actually need it.
-4. **Everything can link to everything else.** A design system is a network of connections; the documentation reflects that.
-5. **There's always a way out.** The schema has opinions, but always a way to step outside them.
+The sections written for people (`for: human`) and for everyone (`for: all`):
 
----
+> **Button**
+>
+> Triggers an action on the current screen.
+>
+> **When to use**
+>
+> - **Should:** Use for an action that happens in place, like saving a form.
+> - **Should not:** Avoid for navigation. A link tells people they're going somewhere.
+>
+> **How to use**
+>
+> - **Must:** Label the button with the action it performs, like "Save draft".
+> - **Should:** Keep to one primary button per screen.
 
-## Flexible and modular
+### What an agent reads
 
-Design systems have different documentation needs. This schema can be as simple or as detailed as needed. Every entry's structured docs live in one `sections` array, and each section has a `kind`. The spec defines three kinds — `guidelines`, `definitions`, `steps`, plus the generic `section`. Any section can also carry `freeform`: headed, nestable prose alongside its own `items`. A component also carries `sourceFiles`, `specs`, `traits`, `combos`, and `imports` as fields of its own, not sections.
+All of it, plus a note no person ever sees. The `for: agent` section is there for the mistake agents make and people don't:
 
-Any entry kind can use any section kind — nothing restricts which goes with which.
+```yaml
+- level: must-not
+  statement: Do not build a button from a div with a click handler.
+  checkedBy: assisted
+```
+
+### What the linter reports
+
+`npm run lint` checks the entry and points at a gap:
+
+```
+button.yaml
+  ⚠ [DSDS-14 guideline-missing-checkedby] /sections/1/items/0/checkedBy: guideline in "button" is a hard requirement (level: must) with no checkedBy, and no same-as target that declares one — declare 'automated', 'assisted', or 'manual' so a tool can tell whether this rule is verifiable at all.
+
+1 file(s) linted: 0 clean, 1 warning(s).
+```
+
+The labeling rule is a `must`, but nothing says how anyone would check it. Add `checkedBy: manual` and the warning clears. The linter never fails a build. It points out what a reviewer would otherwise have to catch.
 
 ---
 
@@ -59,11 +113,31 @@ DSDS sits above them and documents meaning and usage. **If another format owns a
 
 ---
 
+## How a document is built
+
+A document is a [**base**](schema.html#base) — `schemaVersion`, `name`, and a list of [**entries**](schema.html#entries-entry): a [system](schema.html#entries-system), any number of [components](schema.html#entries-component), [tokens](schema.html#entries-token), [themes](schema.html#entries-theme), or the generic `entry` for anything else. The same file feeds your docs site, gives your agents context, and shows up everywhere your design system does.
+
+Design systems have different documentation needs. This schema can be as simple or as detailed as needed. Every entry's structured docs live in one `sections` array, and each section has a `kind`. The spec defines three kinds — `guidelines`, `definitions`, `steps`, plus the generic `section`. Any section can also carry `freeform`: headed, nestable prose alongside its own `items`. A component also carries `sourceFiles`, `specs`, `traits`, `combos`, and `imports` as fields of its own, not sections.
+
+Any entry kind can use any section kind — nothing restricts which goes with which.
+
+---
+
+## Principles
+
+1. **Documentation only.** This schema is focused on the how, when, and why of a design system. That's it. If a better source of truth exists elsewhere, the schema links rather than restating.
+2. **A consistent schema pattern.** Each part of the schema follows the same structure, so writing one part teaches you the rest.
+3. **No learning cliffs.** It's designed to have a low barrier of entry. But it can grow with you. DSDS' `$extensions` let you add on to the schema when you actually need it.
+4. **Everything can link to everything else.** A design system is a network of connections; the documentation reflects that.
+5. **There's always a way out.** The schema has opinions, but always a way to step outside them.
+
+---
+
 ## Next steps
 
 New to DSDS? Start with the [Quick Start Guide](quickstart.html) — document structure, entry kinds, the section system, and examples you can copy.
 
-For the full schema reference, see [Schema](schema.html). For the JSON Schema source, see `schema/`; for working examples, see [Examples](examples.html).
+For the full schema reference, see [Schema](schema.html). For what it means to conform to the spec and every rule the validator enforces, see [Conformance](conformance.html). For the JSON Schema source, see `schema/`; for working examples, see [Examples](examples.html).
 
 ---
 

@@ -1,6 +1,6 @@
 # expect: DSDS-04
 # rejectedBy: semantic
-schemaVersion: "0.21.2"
+schemaVersion: "0.22.0"
 name: Bad Duplicate Entry Id
 entries:
   - kind: component

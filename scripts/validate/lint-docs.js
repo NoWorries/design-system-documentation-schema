@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Editorial lint for DSDS documents (the advisory tier): schema validation and validate.js's
- * DSDS-01-10 answer "is this document allowed/consistent?", this answers "is this
+ * semantic rules answer "is this document allowed/consistent?", this answers "is this
  * documentation good?" It runs on documents that already validate, reports quality gaps, and
  * never fails the build - exit code is always 0 for a documentation finding.
  *
@@ -10,7 +10,7 @@
  * `name`. The only way this script exits non-zero is catalog/code drift (an advisory entry
  * with no implementation, or vice versa) - a tooling bug, not a documentation finding.
  *
- * Usage: node scripts/validate/lint-docs.js [paths…], or `npm run lint`.
+ * Usage: node scripts/validate/lint-docs.js [--json] [paths…], or `npm run lint`. --help for more.
  */
 "use strict";
 
@@ -18,12 +18,9 @@ const fs = require("fs");
 const path = require("path");
 const {
   rootDir,
-  schemaDir,
   loadYaml,
   defaultTargets,
-  entriesIn,
-  declaredProps,
-  entryFieldOrder,
+  isBaseDoc,
   declaredEnum,
   enumRanker,
 } = require("../lib");
@@ -92,22 +89,12 @@ function eachGuidelineItem(entry, fn) {
   });
 }
 
-const LOWERCASE_RFC_REGEX = /(?<![A-Za-z])(must|should)(?: not)?(?![A-Za-z])/g;
-
 // ---------------------------------------------------------------------------
-// STYLE_GUIDE.md's canonical orders (DSDS-17/18/19/20). Field order comes from the schema
-// files; the rank tables further down do not, because they order the items inside an array
-// and no schema file has an opinion about that. Those are kept in sync with the guide by hand.
+// STYLE_GUIDE.md's list orders (DSDS-18/19/21): sections, guideline items and entries. These
+// are reading order, so they stay advice. Field order isn't checked here any more:
+// scripts/format/format.js (dsds-format) applies it, and DSDS-17/20/22/23 are retired.
 // ---------------------------------------------------------------------------
 
-// Read out of the schema files, not transcribed from them. STYLE_GUIDE.md's rule is to
-// follow the order the schema lists, so reading that order at runtime is the only honest way
-// to check it - a hardcoded table here would be a second source of truth for the exact thing
-// the guide says has one, and it drifted twice before this became derived (a stale
-// `related`/`extends` order, and `imports` in the wrong place). See lib.js's
-// `entryFieldOrder` for how the two lists compose.
-const SHARED_FIELD_ORDER = declaredProps("shared.schema.yaml");
-const DOCUMENT_FIELD_ORDER = declaredProps("base.schema.yaml");
 // Read from the schema enums, in the order each one declares its values. These used to be
 // hand-kept tables here; the enums were reordered to match the guide, so the schema now
 // records these orders and this file reads them instead of holding a second copy. Each ranker
@@ -131,124 +118,21 @@ const framingRank = enumRanker("sections/guidelines.schema.yaml", FRAMING_AT);
 const LEVEL = declaredEnum("common/requirement-level.schema.yaml", (d) => d);
 const levelRank = enumRanker("common/requirement-level.schema.yaml", (d) => d);
 
-// STYLE_GUIDE.md §4's breadth scale has three tiers, not two: `when-to-use`, then
-// `how-to-use`, then a section that is really about one tag. The third isn't a field - it is
-// true when every item names the same tag - so unlike the other sorts it has to be read out of
-// the items rather than off the section's own fields.
-const TAG_TIER = FRAMING.values.length;
+// STYLE_GUIDE.md §4's breadth scale: `when-to-use`, then `how-to-use`, in the order the schema
+// lists `framing`. Until 0.22.0 a section declaring `tags` formed a third, narrowest tier. That
+// made `tags` do two jobs - say what a section is about, and decide where it sits - so adding a
+// tag to classify a section could move it. `tags` is classification only now.
+const breadthRank = (section) => framingRank(section.framing);
 
-// The tag a section declares itself to be about, or null.
-//
-// This used to be inferred: a section counted as tag-scoped when it had two or more items and
-// every one of them named the same tag. That read the author's intent off the data, and got it
-// wrong in three ways. Two sections with one accessibility rule each sat mid-run while
-// twenty-eight with two or more sat last, all of them correct and none of it inferable from the
-// corpus. Adding a second rule to a section silently moved it. And a section could hold ten
-// tagged items and still not qualify, because the intersection across them was empty - tier
-// depending on set intersection is not something an author will predict.
-//
-// `tags` on a section says it outright. The first tag is the scope, matching `metadata.tags`'s
-// own convention, and the two-item rule is gone with the inference that needed it.
-function sectionTag(section) {
-  const tags = section.tags;
-  if (!Array.isArray(tags) || tags.length === 0) return null;
-  const first = tags[0];
-  return typeof first === "string" && first.trim() !== "" ? first : null;
-}
+const describeBreadth = (section) => `a \`framing: ${section.framing || FRAMING.fallback}\` section`;
 
-// A tag-scoped section is the narrowest tier whatever its `framing`, so this replaces the
-// framing rank rather than composing with it.
-const breadthRank = (section) => (sectionTag(section) ? TAG_TIER : framingRank(section.framing));
-
-function describeBreadth(section) {
-  const tag = sectionTag(section);
-  return tag
-    ? `a section about one tag (\`${tag}\`)`
-    : `a \`framing: ${section.framing || FRAMING.fallback}\` section`;
-}
-
-const describeTier = (tier) =>
-  tier === TAG_TIER ? "both about one tag" : `both ${FRAMING.values[tier]}`;
+const describeTier = (tier) => `both ${FRAMING.values[tier]}`;
 
 // How a section's audience reads once the schema's default is applied, for use in messages.
 // A section that leaves `for` out is ranked as the default, so it has to be named as the
 // default too - printing "for: undefined" would describe the document rather than the problem.
 function describeAudience(section) {
   return section.for === undefined ? `${AUDIENCE.fallback} (defaulted)` : section.for;
-}
-
-// ---------------------------------------------------------------------------
-// STYLE_GUIDE.md §3/§4/§5/§6's orders, for the smaller objects. Same approach as the entry
-// orders above: read out of the schema files, never transcribed.
-// ---------------------------------------------------------------------------
-
-const EXT_KEY = "$extensions";
-
-// An object built from a shared file plus a more specific one, joined the way §1 joins an
-// entry's: shared fields first, then the specific file's own, then `$extensions` last.
-function composedOrder(baseFile, memberFile) {
-  const base = declaredProps(baseFile);
-  const own = declaredProps(memberFile).filter((k) => !base.includes(k));
-  return [...base.filter((k) => k !== EXT_KEY), ...own, EXT_KEY];
-}
-
-function itemOrder(kind) {
-  const doc = loadYaml(path.join(schemaDir, "sections", `${kind}.schema.yaml`));
-  const inline = (doc.allOf || []).find((m) => m.properties);
-  return Object.keys(inline.properties.items.items.properties);
-}
-
-const METADATA_ORDER = {
-  entry: composedOrder("metadata/metadata.schema.yaml", "metadata/entry-metadata.schema.yaml"),
-  system: composedOrder("metadata/metadata.schema.yaml", "metadata/system-metadata.schema.yaml"),
-};
-const ITEM_ORDER = {
-  guidelines: itemOrder("guidelines"),
-  definitions: itemOrder("definitions"),
-  steps: itemOrder("steps"),
-};
-const COMBO_ORDER = declaredProps("common/combo.schema.yaml");
-// ref.schema.yaml is a oneOf (a bare string, or the object form) - the object form is the
-// only branch with fields to order.
-const REF_ORDER = Object.keys(
-  loadYaml(path.join(schemaDir, "common", "ref.schema.yaml")).oneOf.find((m) => m.properties).properties,
-);
-
-// §4: a section leads with `kind`, `for`, then the one field its kind adds, then the rest of
-// the shared order. The only object whose two lists interleave rather than concatenate.
-const SECTION_KIND_FIELD = { guidelines: "framing", steps: "ordered" };
-const SECTION_TAIL = declaredProps("sections/section.schema.yaml").filter(
-  (k) => k !== "kind" && k !== "for",
-);
-function sectionFieldOrder(kind) {
-  const own = SECTION_KIND_FIELD[kind];
-  return ["kind", "for", ...(own ? [own] : []), ...SECTION_TAIL];
-}
-
-// §2: a trait leads with the two tags that identify it - `traitType`, then `kind` - then the
-// fields every trait shares, then whatever else its own branch adds. Interleaves the same way
-// a section does, so like a section the two-field lead is stated here and both lists are read
-// out of the schema. declaredProps() can't be used: a trait's shared fields live in a `$defs`
-// entry the branches `$ref`, not in a file's own `properties`.
-const TRAIT_LEAD = ["traitType", "kind"];
-const COMPONENT_SCHEMA = loadYaml(path.join(schemaDir, "entries", "component.schema.yaml"));
-const TRAIT_BRANCHES =
-  COMPONENT_SCHEMA.allOf.find((m) => m.properties).properties.traits.items.anyOf;
-const TRAIT_VALUE_PROPS = Object.keys(COMPONENT_SCHEMA.$defs.traitValue.properties);
-// A trait's `values[]` are traitValues with `refs` added.
-const TRAIT_VALUE_ORDER = [...TRAIT_VALUE_PROPS, "refs"];
-
-const branchProps = (branch) => Object.keys((branch.allOf || []).find((m) => m.properties)?.properties || {});
-
-function traitFieldOrder(kind) {
-  const branch = TRAIT_BRANCHES.find((b) => branchProps(b).includes("kind") &&
-    (b.allOf.find((m) => m.properties).properties.kind || {}).const === kind);
-  // An unknown or missing `kind` still has the shared fields to order; the branch-only tail
-  // is simply unknown, so it contributes nothing rather than guessing a branch.
-  const tail = branch
-    ? branchProps(branch).filter((k) => !TRAIT_LEAD.includes(k) && !TRAIT_VALUE_PROPS.includes(k))
-    : [];
-  return [...TRAIT_LEAD, ...TRAIT_VALUE_PROPS, ...tail];
 }
 
 // Every entity in a document, with a JSON pointer to it. A standalone entry file is its own
@@ -262,7 +146,7 @@ function entitiesWithPointers(doc) {
 }
 
 // Returns the first out-of-order pair, or null if `actual` is already non-decreasing by
-// canonical rank - the general "is this sequence sorted" check DSDS-17/18/19/20 all reduce to.
+// canonical rank - the general "is this sequence sorted" check DSDS-18/19/21 all reduce to.
 function firstInversion(actual, rankOf) {
   for (let i = 1; i < actual.length; i++) {
     if (rankOf(actual[i]) < rankOf(actual[i - 1])) return [actual[i - 1], actual[i]];
@@ -271,19 +155,6 @@ function firstInversion(actual, rankOf) {
 }
 
 const IMPLEMENTATIONS = {
-  "rfc-keywords-lowercase-in-normative-prose": (entry, emit) => {
-    eachGuidelineItem(entry, (item, p) => {
-      if (typeof item.statement !== "string") return;
-      const hits = item.statement.match(LOWERCASE_RFC_REGEX);
-      if (hits) {
-        emit(
-          `${p}/statement`,
-          `guideline in "${entry.id}" uses lowercase '${hits[0]}' in its statement — capitalize RFC 2119 keywords in normative prose (${hits[0].toUpperCase()}) so the conformance weight is explicit.`,
-        );
-      }
-    });
-  },
-
   // Normalizes both strings and flags an exact restatement or a bare value literal.
   "token-description-restates-identifier": (entry, emit) => {
     if (entry.kind !== "token") return;
@@ -351,25 +222,6 @@ const IMPLEMENTATIONS = {
     }
   },
 
-  // STYLE_GUIDE.md §2 - only checks the relative order of fields actually present, so an
-  // entry that leaves a field out is never flagged for its absence.
-  "entry-field-order": (entry, emit) => {
-    // A namespaced custom kind (`acme.icon-library`) has no schema file of its own, so it
-    // falls back to the bare envelope - the same fallback entry.schema.yaml's dispatch gives it.
-    const order = entry.kind === undefined ? SHARED_FIELD_ORDER : entryFieldOrder(entry.kind);
-    const actual = Object.keys(entry).filter((k) => order.includes(k));
-    const inversion = firstInversion(actual, (k) => order.indexOf(k));
-    if (inversion) {
-      const source = entry.kind === undefined
-        ? "shared.schema.yaml"
-        : `entries/entry.schema.yaml, then entries/${entry.kind}.schema.yaml`;
-      emit(
-        "",
-        `"${entry.id}" has \`${inversion[0]}\` before \`${inversion[1]}\` — STYLE_GUIDE.md §2 says match the spec's own declared order, which for a ${entry.kind || "shared"} entry (${source}) is [${order.join(", ")}]. Actual order here: [${actual.join(", ")}].`,
-      );
-    }
-  },
-
   // STYLE_GUIDE.md §4 - same-kind sections must stay contiguous and general-to-specific
   // (guidelines, definitions, steps, section); among guidelines sections, breadth decides
   // first (when-to-use, how-to-use, then about-one-tag), then audience (all, human, agent)
@@ -393,7 +245,7 @@ const IMPLEMENTATIONS = {
     if (breadthInversion) {
       emit(
         "/sections",
-        `"${entry.id}" has ${describeBreadth(breadthInversion[0])} before ${describeBreadth(breadthInversion[1])} — STYLE_GUIDE.md §4 orders guidelines sections ${FRAMING.values.join(", ")}, then sections about one tag.`,
+        `"${entry.id}" has ${describeBreadth(breadthInversion[0])} before ${describeBreadth(breadthInversion[1])} — STYLE_GUIDE.md §4 orders guidelines sections ${FRAMING.values.join(", ")}.`,
       );
       return; // fix breadth first - the audience sort below only orders sections that TIE on breadth
     }
@@ -419,20 +271,6 @@ const IMPLEMENTATIONS = {
     }
   },
 
-  // STYLE_GUIDE.md §5 - must, should, may, should-not, must-not. Items sharing a level keep
-  // their relative order; only a strict level-to-level inversion is flagged.
-  "guideline-item-level-order": (entry, emit) => {
-    (entry.sections || []).forEach((section, si) => {
-      if (!section || section.kind !== "guidelines" || !Array.isArray(section.items)) return;
-      const inversion = firstInversion(section.items, (it) => levelRank(it.level));
-      if (inversion) {
-        emit(
-          `/sections/${si}/items`,
-          `"${entry.id}" has a level: ${inversion[0].level} item before a level: ${inversion[1].level} one — STYLE_GUIDE.md orders guideline items ${LEVEL.values.join(", ")}.`,
-        );
-      }
-    });
-  },
 };
 
 // Every item id declared anywhere on an entity, keyed to the item object - mirrors
@@ -458,6 +296,26 @@ function collectItemsById(entity) {
   }
   for (const trait of entity.traits || []) walk(trait);
   return byId;
+}
+
+// The items a guideline item's same-as refs point at, looked up in this document only. Each
+// result is { found: true, item } for a target in this document, or { found: false } for one
+// whose entry isn't here (a cross-file same-as), which these rules can't see into.
+function sameAsTargets(item, itemsByEntityId) {
+  const out = [];
+  for (const ref of item.refs || []) {
+    if (!ref || ref.rel !== "same-as" || typeof ref.to !== "string") continue;
+    const hashIdx = ref.to.indexOf("#");
+    if (hashIdx === -1) continue;
+    const targetItems = itemsByEntityId.get(ref.to.slice(0, hashIdx));
+    if (!targetItems) {
+      out.push({ found: false });
+      continue;
+    }
+    const targetItem = targetItems.get(ref.to.slice(hashIdx + 1));
+    if (targetItem) out.push({ found: true, item: targetItem });
+  }
+  return out;
 }
 
 // Document-scoped rules run once per file, against the raw parsed document, instead of once
@@ -492,15 +350,7 @@ const DOCUMENT_IMPLEMENTATIONS = {
     // A same-as ref to a target in this document with no checkedBy still leaves the item
     // unresolved, so it's correctly flagged.
     function inheritsCheckedBy(item) {
-      return (item.refs || []).some((ref) => {
-        if (!ref || ref.rel !== "same-as" || typeof ref.to !== "string") return false;
-        const hashIdx = ref.to.indexOf("#");
-        if (hashIdx === -1) return false;
-        const targetItems = itemsByEntityId.get(ref.to.slice(0, hashIdx));
-        if (!targetItems) return true;
-        const targetItem = targetItems.get(ref.to.slice(hashIdx + 1));
-        return Boolean(targetItem && targetItem.checkedBy);
-      });
+      return sameAsTargets(item, itemsByEntityId).some((t) => !t.found || Boolean(t.item.checkedBy));
     }
 
     for (const [entity, at] of entities) {
@@ -509,6 +359,39 @@ const DOCUMENT_IMPLEMENTATIONS = {
           emit(
             `${at}${p}/checkedBy`,
             `guideline in "${entity.id}" is a hard requirement (level: ${item.level}) with no checkedBy, and no same-as target that declares one — declare 'automated', 'assisted', or 'manual' so a tool can tell whether this rule is verifiable at all.`,
+          );
+        }
+      });
+    }
+  },
+
+  // STYLE_GUIDE.md §5 - must, should, may, should-not, must-not. Items sharing a level keep
+  // their relative order; only a strict level-to-level inversion is flagged.
+  //
+  // An item that leaves `level` out takes it from its same-as target (DSDS-10), so it's ranked
+  // at that level. That's why this rule is document-scoped: the target is usually on another
+  // entry in the same document. If the level can't be found here (the target is in another
+  // file), the item is left out of the comparison rather than guessed at.
+  "guideline-item-level-order": (doc, emit) => {
+    const entities = entitiesWithPointers(doc);
+    const itemsByEntityId = new Map(entities.map(([entity]) => [entity.id, collectItemsById(entity)]));
+
+    function effectiveLevel(item) {
+      if (item.level !== undefined) return { level: item.level, borrowed: false };
+      const target = sameAsTargets(item, itemsByEntityId).find((t) => t.found && t.item.level !== undefined);
+      return target ? { level: target.item.level, borrowed: true } : null;
+    }
+    const describe = ({ level, borrowed }) => `level: ${level}${borrowed ? " (from its same-as target)" : ""}`;
+
+    for (const [entity, at] of entities) {
+      (entity.sections || []).forEach((section, si) => {
+        if (!section || section.kind !== "guidelines" || !Array.isArray(section.items)) return;
+        const ranked = section.items.map(effectiveLevel).filter(Boolean);
+        const inversion = firstInversion(ranked, (it) => levelRank(it.level));
+        if (inversion) {
+          emit(
+            `${at}/sections/${si}/items`,
+            `"${entity.id}" has a ${describe(inversion[0])} item before a ${describe(inversion[1])} one — STYLE_GUIDE.md orders guideline items ${LEVEL.values.join(", ")}.`,
           );
         }
       });
@@ -530,136 +413,69 @@ const DOCUMENT_IMPLEMENTATIONS = {
     }
   },
 
-  // STYLE_GUIDE.md §3/§4/§5/§6 - the field order of every object nested inside an entry.
-  "nested-field-order": (doc, emit) => {
-    const check = (label, pointer, obj, order) => {
-      const present = Object.keys(obj).filter((k) => order.includes(k));
-      const inversion = firstInversion(present, (k) => order.indexOf(k));
-      if (inversion) {
-        emit(
-          pointer,
-          `${label} has \`${inversion[0]}\` before \`${inversion[1]}\` — its schema file declares [${order.filter((k) => present.includes(k)).join(", ")}].`,
-        );
-      }
-    };
-
-    // Refs turn up all over an entry (`refs`, `related`, `extends`, `evidence`, `checks`,
-    // `specs`, `source`, …), so they're found by what they contain rather than by field name. `$extensions`
-    // is skipped: it holds vendor data, and an object in there carrying `href` is not a ref.
-    const walkRefs = (node, pointer) => {
-      if (!node || typeof node !== "object") return;
-      if (Array.isArray(node)) {
-        node.forEach((v, i) => walkRefs(v, `${pointer}/${i}`));
-        return;
-      }
-      if ("to" in node || "href" in node) check("a ref", pointer, node, REF_ORDER);
-      for (const [key, value] of Object.entries(node)) {
-        if (key === EXT_KEY) continue;
-        if (value && typeof value === "object") walkRefs(value, `${pointer}/${key}`);
-      }
-    };
-
-    for (const [entity, at] of entitiesWithPointers(doc)) {
-      if (!entity || typeof entity !== "object") continue;
-      if (entity.metadata && typeof entity.metadata === "object") {
-        const order = entity.kind === "system" ? METADATA_ORDER.system : METADATA_ORDER.entry;
-        check("a `metadata` block", `${at}/metadata`, entity.metadata, order);
-      }
-      (entity.combos || []).forEach((combo, ci) => {
-        if (combo && typeof combo === "object") check("a `combo`", `${at}/combos/${ci}`, combo, COMBO_ORDER);
-      });
-      (entity.traits || []).forEach((trait, ti) => {
-        if (!trait || typeof trait !== "object") return;
-        const traitAt = `${at}/traits/${ti}`;
-        check("a trait", traitAt, trait, traitFieldOrder(trait.kind));
-        (trait.values || []).forEach((value, vi) => {
-          if (value && typeof value === "object") {
-            check("a trait value", `${traitAt}/values/${vi}`, value, TRAIT_VALUE_ORDER);
-          }
-        });
-      });
-      (entity.sections || []).forEach((section, si) => {
-        if (!section || typeof section !== "object") return;
-        const sectionAt = `${at}/sections/${si}`;
-        check("a section", sectionAt, section, sectionFieldOrder(section.kind));
-        if (section.metadata && typeof section.metadata === "object") {
-          check("a section's `metadata`", `${sectionAt}/metadata`, section.metadata, METADATA_ORDER.entry);
-        }
-        const order = ITEM_ORDER[section.kind];
-        if (!order) return;
-        (section.items || []).forEach((item, ii) => {
-          if (item && typeof item === "object") {
-            check(`a ${section.kind} item`, `${sectionAt}/items/${ii}`, item, order);
-          }
-        });
-      });
-    }
-    walkRefs(doc, "");
-  },
-
-  // STYLE_GUIDE.md §6 - combos[] sorts by subject, then by level within one subject.
-  "combo-order": (doc, emit) => {
-    for (const [entity, at] of entitiesWithPointers(doc)) {
-      const combos = entity && entity.combos;
-      if (!Array.isArray(combos) || combos.length < 2) continue;
-      // Contiguity, not a sort. STYLE_GUIDE.md's global rule is "don't alphabetize", and §6's
-      // reason for grouping by subject is that a reader checking one trait finds all its rules
-      // together - which a string sort is one way to achieve but not the requirement. So this
-      // only reports a subject that appears, stops, and appears again.
-      const seen = new Set();
-      for (let i = 0; i < combos.length; i++) {
-        const subject = String(combos[i] && combos[i].subject);
-        const prevSubject = i > 0 ? String(combos[i - 1].subject) : null;
-        if (subject !== prevSubject) {
-          if (seen.has(subject)) {
-            emit(
-              `${at}/combos`,
-              `subject "${subject}" appears again after another subject came in between — STYLE_GUIDE.md §6 keeps every combo for one subject together, so a reader checking one trait or token finds all of its rules in one place.`,
-            );
-            break;
-          }
-          seen.add(subject);
-        }
-      }
-      for (let i = 1; i < combos.length; i++) {
-        const prev = combos[i - 1];
-        const next = combos[i];
-        const sameSubject = String(prev && prev.subject) === String(next && next.subject);
-        if (sameSubject && levelRank(prev.level) > levelRank(next.level)) {
-          emit(
-            `${at}/combos`,
-            `two combos share subject "${prev.subject}" but run level: ${prev.level} before level: ${next.level} — STYLE_GUIDE.md §6 orders them ${LEVEL.values.join(", ")} within one subject.`,
-          );
-          break;
-        }
-      }
-    }
-  },
-  // STYLE_GUIDE.md's "Base documents" order - only applies to a base document (has
-  // schemaVersion); a standalone entry file has no document-level fields to order.
-  "document-field-order": (doc, emit) => {
-    if (typeof doc.schemaVersion === "undefined") return;
-    const actual = Object.keys(doc).filter((k) => DOCUMENT_FIELD_ORDER.includes(k));
-    const inversion = firstInversion(actual, (k) => DOCUMENT_FIELD_ORDER.indexOf(k));
-    if (inversion) {
-      emit(
-        "",
-        `document has \`${inversion[0]}\` before \`${inversion[1]}\` — STYLE_GUIDE.md says match the spec's own declared order, which for a base document (base.schema.yaml) is [${DOCUMENT_FIELD_ORDER.join(", ")}]. Actual order here: [${actual.join(", ")}].`,
-      );
-    }
-  },
 };
 
 // ---------------------------------------------------------------------------
 // Runner
 // ---------------------------------------------------------------------------
 
+const SITE_URL = "https://designsystemdocspec.org";
+
+const HELP = `Usage: dsds-lint [options] [file-or-folder ...]
+
+Checks DSDS documents for documentation quality: the advisory rules
+(DSDS-13 and up). Findings are suggestions, never failures, so the exit code is
+0 whatever it finds. Run dsds-validate first; this assumes a valid document.
+With no paths, lints the examples that ship with DSDS.
+
+Options:
+  --json        Print one JSON report to stdout instead of text.
+  --self-check  Only check that every advisory rule in the catalog has an
+                implementation here, and the reverse. Exits 1 if not.
+  -h, --help    Show this help.
+
+In --json output, each finding has:
+  rule      The rule id (DSDS-XX).
+  severity  Always "warning".
+  pointer   Where the problem is, as a JSON Pointer into the document. When
+            the fix is to add a missing field, it names where that field goes.
+  message   What's wrong.
+  fix       How to fix it.
+  docs      The rule's section on the Conformance page.
+
+Rules: ${SITE_URL}/conformance#rule-details
+`;
+
+// Each entity in a document with its JSON Pointer, matching entriesIn()'s order. Entity-scope
+// checks emit pointers relative to the entity; this is what turns them into document pointers.
+function entitiesForLint(doc) {
+  if (!isBaseDoc(doc)) return [[doc, ""]];
+  return [
+    ...(doc.entries || []).map((entity, i) => [entity, `/entries/${i}`]),
+    ...(doc.shared || []).map((entity, i) => [entity, `/shared/${i}`]),
+  ];
+}
+
 function main() {
+  const KNOWN_FLAGS = new Set(["--self-check", "--json", "--help", "-h"]);
+  const argv = process.argv.slice(2);
+  if (argv.includes("--help") || argv.includes("-h")) {
+    process.stdout.write(HELP);
+    return;
+  }
+  const unknown = argv.filter((a) => a.startsWith("-") && !KNOWN_FLAGS.has(a));
+  if (unknown.length) {
+    console.error(`Unknown option: ${unknown.join(", ")}\n`);
+    process.stderr.write(HELP);
+    process.exit(2);
+  }
+
   // `--self-check` runs activeRules()'s catalog/implementation drift gate and stops. CI runs
   // the findings pass under continue-on-error (they're advisory), which used to swallow this
   // gate too - a catalog rule with no implementation only failed the build indirectly, via the
   // prose-range guards. This mode is a separate, blocking step.
-  const selfCheckOnly = process.argv.includes("--self-check");
+  const selfCheckOnly = argv.includes("--self-check");
+  const json = argv.includes("--json");
   const rules = activeRules();
   if (selfCheckOnly) {
     console.log(
@@ -669,7 +485,8 @@ function main() {
     return;
   }
 
-  const args = process.argv.slice(2).filter((a) => a !== "--self-check");
+  const fixById = new Map(loadCatalog().map((r) => [r.id, r.fix]));
+  const args = argv.filter((a) => !KNOWN_FLAGS.has(a));
   const targets = args.length
     ? args.flatMap((t) => {
         const stat = fs.existsSync(t) && fs.statSync(t);
@@ -682,11 +499,14 @@ function main() {
       })
     : defaultTargets();
 
-  console.log("\nDSDS Doc Lint (warnings only — never fails the build)");
-  console.log(`  ${rules.length} rule(s) from schema/conformance-rules.yaml: ${rules.map((r) => r.id).join(", ")}\n`);
+  if (!json) {
+    console.log("\nDSDS Doc Lint (warnings only — never fails the build)");
+    console.log(`  ${rules.length} rule(s) from schema/conformance-rules.yaml: ${rules.map((r) => r.id).join(", ")}\n`);
+  }
 
   let totalFindings = 0;
   let cleanFiles = 0;
+  const files = [];
 
   for (const target of targets) {
     let doc;
@@ -695,30 +515,55 @@ function main() {
     } catch {
       continue; // not this tool's job - validate.js reports parse errors
     }
+    if (!doc || typeof doc !== "object") continue;
     const rel = path.relative(process.cwd(), target);
     const findings = [];
     for (const rule of rules) {
       if (rule.scope !== "document") continue;
-      rule.check(doc, (p, message) => findings.push({ id: rule.id, rule: rule.name, path: p, message }));
+      rule.check(doc, (p, message) => findings.push({ id: rule.id, rule: rule.name, path: p, pointer: p, message }));
     }
-    for (const entry of entriesIn(doc)) {
+    for (const [entry, entryPointer] of entitiesForLint(doc)) {
       for (const rule of rules) {
         if (rule.scope === "document") continue;
-        rule.check(entry, (p, message) => findings.push({ id: rule.id, rule: rule.name, path: p, message }));
+        rule.check(entry, (p, message) => findings.push({ id: rule.id, rule: rule.name, path: p, pointer: `${entryPointer}${p}`, message }));
       }
     }
-    if (findings.length === 0) {
-      cleanFiles++;
+    totalFindings += findings.length;
+    if (findings.length === 0) cleanFiles++;
+
+    if (json) {
+      files.push({
+        file: rel,
+        warnings: findings.length,
+        findings: findings.map((f) => ({
+          rule: f.id,
+          severity: "warning",
+          pointer: f.pointer,
+          message: f.message,
+          fix: fixById.get(f.id) || null,
+          docs: `${SITE_URL}/conformance#${f.id.toLowerCase()}`,
+        })),
+      });
       continue;
     }
+    if (findings.length === 0) continue;
     console.log(`  ${rel}`);
     for (const f of findings) {
       console.log(`    ⚠ [${f.id} ${f.rule}] ${f.path}: ${f.message}`);
-      totalFindings++;
     }
     console.log("");
   }
 
+  if (json) {
+    const report = {
+      tool: "dsds-lint",
+      rules: rules.map((r) => r.id),
+      summary: { files: files.length, clean: cleanFiles, warnings: totalFindings },
+      files,
+    };
+    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+    return;
+  }
   console.log(`  ${targets.length} file(s) linted: ${cleanFiles} clean, ${totalFindings} warning(s).\n`);
 }
 

@@ -26,7 +26,6 @@ sections:
         statement: Avoid for an unfamiliar or high-stakes action - a visible label says what will happen.
         alternatives:
           - to: button
-            rel: alternative-to
 
   - kind: guidelines
     for: all
@@ -35,7 +34,7 @@ sections:
         statement: Icon button MUST carry an aria-label, since it has no visible text label.
         checks:
           - href: ./tests/icon-button.a11y.test.ts
-            rel: test
+            role: test
         checkedBy: automated
       # Borrowed from the same shared rule button.yaml points at - shows
       # more than one entry citing the same shared item instead of

@@ -18,8 +18,32 @@ sections:
         statement: Do not use button when the action navigates to a new URL; use the link entry instead.
         alternatives:
           - to: link
-            rel: alternative-to
         checkedBy: manual
+
+  # `tags` says what this section is about. It doesn't decide where the
+  # section sits: that's `framing` (how-to-use, the default) and then `for`,
+  # so this `for: all` section comes before the `for: human` one below.
+  - kind: guidelines
+    for: all
+    title: Accessibility
+    tags: [accessibility]
+    items:
+      - level: must
+        statement: Give an icon-only button an accessible name that matches its visible tooltip.
+        checks:
+          - href: ./tests/button.a11y.test.ts
+            role: test
+            note: vitest + axe-core
+        checkedBy: automated
+        tags: [accessibility, naming]
+      - level: must
+        statement: Keep the focus indicator visible when the button is focused by keyboard.
+        checkedBy: assisted
+        tags: [accessibility, focus]
+      - level: should-not
+        statement: Do not remove the button from the tab order to make it decorative.
+        checkedBy: manual
+        tags: [accessibility, focus]
 
   - kind: guidelines
     for: human
@@ -29,13 +53,13 @@ sections:
         checkedBy: manual
       # No statement here - this requirement is owned and tracked in the
       # team's own requirements system, not restated in this document. See
-      # guidelines.schema.yaml's own $comment for why external-link
+      # guidelines.schema.yaml's own $comment for why a relates-to link
       # exempts statement the same way same-as does.
       - level: must
         checkedBy: manual
         refs:
           - href: https://example.atlassian.net/browse/DS-482
-            rel: external-link
+            rel: relates-to
       - level: should
         statement: Limit each surface to one primary button.
         example:
@@ -52,32 +76,6 @@ sections:
           com.acme:
             rationale: Multiple primary buttons compete for attention and force the user to guess which action is actually the recommended one.
             failureMode: A dialog ships with two primary-styled buttons (e.g. "Save" and "Save as draft"), and usability testing shows users default to the wrong one.
-
-  # Every item here carries the `accessibility` tag, which makes this a
-  # tag-scoped section: narrowest, so it follows every how-to-use section
-  # above it whatever their `for` is. `for: all` after `for: human` is not
-  # an audience inversion, because audience only sorts within one tier.
-  - kind: guidelines
-    for: all
-    title: Accessibility
-    tags: [accessibility]
-    items:
-      - level: must
-        statement: Give an icon-only button an accessible name that matches its visible tooltip.
-        checks:
-          - href: ./tests/button.a11y.test.ts
-            rel: test
-            role: vitest + axe-core
-        checkedBy: automated
-        tags: [accessibility, naming]
-      - level: must
-        statement: Keep the focus indicator visible when the button is focused by keyboard.
-        checkedBy: assisted
-        tags: [accessibility, focus]
-      - level: should-not
-        statement: Do not remove the button from the tab order to make it decorative.
-        checkedBy: manual
-        tags: [accessibility, focus]
 
   - kind: definitions
     for: all
@@ -98,26 +96,25 @@ sections:
       - optional: true
         title: Works with a custom icon in the leading-icon slot.
 
-refs:
-  - to: button-group
-    rel: part-of
-  - to: icon-button
-    rel: alternative-to
-  - to: link
-    rel: alternative-to
+uses:
   - to: color.action.primary
-    rel: depends-on
+
+alternatives:
+  - to: icon-button
+  - to: link
+
+refs:
   - href: https://github.com/org/ds/react/button
     rel: source
   - href: https://storybook.org/ds/button
-    rel: storybook
+    rel: demo
     role: hosted docs
   - href: ./stories/button.stories.tsx
-    rel: storybook
+    rel: demo
     role: CSF story source
     note: Component Story Format (CSF3) - the source the hosted docs above are built from.
   - href: npm:@org/ds-react
-    rel: package
+    rel: source
 
 # A tool extracts the full interface (variant/size/disabled/loading/
 # onClick/fullWidth) straight from this file - JSDoc/TSDoc in the code
@@ -125,10 +122,8 @@ refs:
 sourceFiles:
   - platform: react
     file: ./src/Button.tsx
-
 specs:
   - href: ./contracts/button.contract.json
-    rel: contract
     role: DS Contracts
 
 # One field for every way the button varies: configuration the consumer
@@ -138,8 +133,9 @@ traits:
   - traitType: state
     kind: boolean
     id: loading
-    description: Shows a spinner in place of the label and blocks interaction while active.
-    purpose: Prevents duplicate submissions while an action is in flight.
+    description: >-
+      Shows a spinner in place of the label and blocks interaction while active.
+      Prevents duplicate submissions while an action is in flight.
   - traitType: variant
     kind: enum
     id: size
@@ -162,6 +158,16 @@ traits:
         description: Lower-emphasis alternative for secondary actions alongside a primary button.
       - id: danger
         description: Destructive actions only (delete, revoke access, etc.).
+      # A value on its way out. The pointer to its successor sits next to
+      # the notice, on the deprecated value itself, so an agent rewriting
+      # `variant="ghost"` across a codebase has the successor as data.
+      - id: ghost
+        description: Borderless, transparent style.
+        status:
+          status: deprecated
+          deprecationNotice: Use `secondary`. Ghost buttons failed contrast checks on tinted surfaces.
+          replacedBy:
+            - to: button#variant.secondary
   # hover, loading and disabled are all states, but only hover happens on its
   # own - the other two are turned on by the caller. `traitType` says what a
   # trait is, not who switches it.
@@ -182,7 +188,6 @@ combos:
     level: must-not
     items: [variant.danger]
     note: Destructive actions need the full-size touch target; a small danger button invites mis-taps on the most costly action.
-
 $extensions:
   com.figma:
     displayName: "Button/Primary"

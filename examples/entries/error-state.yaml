@@ -1,8 +1,10 @@
 kind: entry
 id: error-state
 name: Error State
-description: Composition of components shown when content fails to load due to a system error.
-purpose: Tells the user something went wrong and gives them a way to retry, instead of leaving a blank or broken surface.
+description: >-
+  Composition of components shown when content fails to load due to a system
+  error. Tells the user something went wrong and gives them a way to retry,
+  instead of leaving a blank or broken surface.
 
 metadata:
   tags: [feedback]
@@ -19,9 +21,8 @@ sections:
         statement: A request fails due to a network or server error.
       - level: should-not
         statement: A list or search genuinely has zero results.
-        refs:
+        alternatives:
           - to: empty-state
-            rel: alternative-to
             note: Zero results is a normal outcome, not a failure - it needs an empty-state message, not a retry action.
 
   - kind: guidelines
@@ -31,8 +32,7 @@ sections:
         statement: Always include a retry action, since the underlying condition is often transient.
         checkedBy: manual
 
-refs:
+uses:
   - to: button
-    rel: composes
+alternatives:
   - to: empty-state
-    rel: alternative-to

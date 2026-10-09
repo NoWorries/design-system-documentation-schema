@@ -1,6 +1,6 @@
 {
   "name": "design-system-documentation-schema",
-  "version": "0.21.2",
+  "version": "0.22.0",
   "description": "A standard, machine-readable format for design system documentation.",
   "contributors": [
     {
@@ -36,9 +36,11 @@
     "dev": "node scripts/site/serve.js",
     "build": "npm run generate && node scripts/site/build-site.js",
     "check:all": "npm run check && npm run build && npm run check:docs",
-    "check": "node scripts/generate/bundle.js && node scripts/checks/check-schema-ids.js && node scripts/checks/check-schema-field-order.js && node scripts/checks/check-rule-catalog.js && node scripts/generate/sync-examples.js --check && node scripts/validate/validate.js && node scripts/validate/conformance-test.js && node scripts/validate/validate.js test/site-components/index.dsds.yaml test/site-components/components/*.dsds.yaml && node scripts/validate/validate.js examples/interop/color-action-primary.dsds.yaml examples/interop/my-element.dsds.yaml && node scripts/validate/validate.js examples/interop/nested-color.dsds.yaml && node scripts/generate/sync-skill-versions.js --check && npm run generate:check",
+    "check": "node scripts/generate/bundle.js && node scripts/checks/check-schema-ids.js && node scripts/checks/check-schema-field-order.js && node scripts/checks/check-rule-catalog.js && node scripts/checks/check-normative-citations.mjs && node scripts/generate/sync-examples.js --check && node scripts/format/format.js --check && node scripts/format/format.js --check examples/vectors && node scripts/validate/validate.js && node scripts/validate/conformance-test.js && node scripts/resolve/vectors.js && node scripts/validate/validate.js test/site-components/index.dsds.yaml test/site-components/components/*.dsds.yaml && node scripts/validate/validate.js examples/interop/color-action-primary.dsds.yaml examples/interop/my-element.dsds.yaml && node scripts/validate/validate.js examples/interop/nested-color.dsds.yaml && node scripts/generate/sync-skill-versions.js --check && npm run generate:check",
     "check:docs": "node scripts/checks/check-markdown-mirrors.mjs && node scripts/checks/check-internal-links.mjs && node scripts/checks/check-docs-coverage.mjs && node scripts/checks/check-scripts-documented.mjs && node scripts/checks/check-doc-examples.mjs && node scripts/checks/check-composed-fragments.mjs && node scripts/checks/check-retired-terms.mjs && node scripts/checks/check-edge-function-pages.mjs && stylelint \"site/**/*.css\"",
     "lint": "node scripts/validate/lint-docs.js",
+    "format": "node scripts/format/format.js",
+    "resolve": "node scripts/resolve/resolve.js",
     "validate": "node scripts/validate/validate.js",
     "generate": "node scripts/generate/sync-examples.js && node scripts/generate/bundle.js && node scripts/generate/extract-normative.mjs && node scripts/generate/generate-rule-catalog.mjs && node scripts/generate/generate-examples-index.mjs && node scripts/generate/generate-conformance-suite.mjs && node scripts/generate/sync-style-guide.mjs && node scripts/generate/sync-envelopes.mjs && node scripts/generate/sync-interop-map.mjs && node scripts/generate/sync-terms.mjs",
     "generate:check": "node scripts/generate/extract-normative.mjs --check && node scripts/generate/generate-rule-catalog.mjs --check && node scripts/generate/generate-examples-index.mjs --check && node scripts/generate/generate-conformance-suite.mjs --check && node scripts/generate/sync-style-guide.mjs --check && node scripts/generate/sync-envelopes.mjs --check && node scripts/generate/sync-interop-map.mjs --check && node scripts/generate/sync-terms.mjs --check",
@@ -74,12 +76,14 @@
   "homepage": "https://github.com/somerandomdude/design-system-documentation-schema#readme",
   "bin": {
     "dsds-validate": "scripts/validate/validate.js",
-    "dsds-lint": "scripts/validate/lint-docs.js"
+    "dsds-lint": "scripts/validate/lint-docs.js",
+    "dsds-format": "scripts/format/format.js"
   },
   "files": [
     "schema",
     "scripts/validate/validate.js",
     "scripts/validate/lint-docs.js",
+    "scripts/format/format.js",
     "scripts/lib.js",
     "scripts/generate/bundle.js",
     "README.md",
@@ -89,7 +93,8 @@
   "dependencies": {
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
-    "js-yaml": "^4.3.2"
+    "js-yaml": "^4.3.2",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",

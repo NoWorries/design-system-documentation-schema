@@ -1,4 +1,4 @@
-schemaVersion: "0.21.2"
+schemaVersion: "0.22.0"
 
 name: Pizza Party Design System
 
@@ -31,9 +31,8 @@ entries:
           - refs:
               - to: order-confirmation#name-the-order
                 rel: same-as
-    refs:
+    uses:
       - to: order-confirmation
-        rel: implements
 
   # A pattern, and the rule it owns. Several components follow this one.
   - kind: entry

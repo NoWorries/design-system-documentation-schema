@@ -16,7 +16,6 @@ sections:
         statement: Use once below a definition's description to list the other definitions it references. Not a general-purpose link list — for a link inline within running prose or a property's own type, use type-ref instead.
         alternatives:
           - to: type-ref
-            rel: alternative-to
         checkedBy: manual
 
   - kind: guidelines
@@ -26,10 +25,6 @@ sections:
         statement: Slot plain anchor elements, not ds-type-ref — this component only styles the links it's given; it does not render its own link markup or resolve targets.
         checkedBy: manual
 
-refs:
-  - to: def-section
-    rel: part-of
-    note: Used below a definition's own description to list related definitions.
 
 
 sourceFiles:

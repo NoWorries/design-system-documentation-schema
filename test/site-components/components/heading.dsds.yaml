@@ -23,7 +23,7 @@ sections:
         statement: Levels MUST NOT skip — e.g. an h2 section's first child heading MUST be h3, never h4, so the page's heading outline stays navigable by assistive-technology heading-jump commands.
         checks:
           - href: ../../../scripts/checks/axe-audit.mjs
-            rel: test
+            role: test
         checkedBy: automated
       - level: should
         statement: Prefer the default anchor (derived from text content) — set anchor explicitly only when two headings on the same page would otherwise collide, or when a stable, pre-existing deep link needs to survive a heading text edit.

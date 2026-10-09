@@ -27,13 +27,13 @@ Every integration below is a field that exists today, not a plan. `rel` values c
 | Layer | Format it interoperates with | The DSDS field |
 |---|---|---|
 | Token values, types, aliases | [DTCG](https://www.w3.org/community/reports/design-tokens/CG-FINAL-format-20251028/) (W3C Design Tokens) | A token entry's `source`; a theme's `source` |
-| Component API contract, already generated | [Custom Elements Manifest](https://github.com/webcomponents/custom-elements-manifest) (CEM), or any standard contract document | A component's `specs` (`rel: contract`) |
+| Component API contract, already generated | [Custom Elements Manifest](https://github.com/webcomponents/custom-elements-manifest) (CEM), or any standard contract document | A component's `specs` |
 | Component source, per platform | `.tsx`, `.vue`, `.swift`, framework typings — whatever a generator reads | A component's `sourceFiles` |
-| Stories and live demos | [Component Story Format](https://storybook.js.org/docs/api/csf) (CSF), Storybook, or an equivalent | A `refs`/`examples` entry with `rel: storybook` |
-| Whether a guideline actually holds | A test or lint rule — vitest, axe-core, stylelint, ESLint | A guideline's `checks` (`rel: test`, `rel: lint-rule`) |
-| Why a guideline exists | WCAG, ARIA APG, MDN, an internal RFC | A guideline's `evidence` (`rel: external-link`) |
+| Stories and live demos | [Component Story Format](https://storybook.js.org/docs/api/csf) (CSF), Storybook, or an equivalent | A `refs`/`examples` entry with `rel: demo` |
+| Whether a guideline actually holds | A test or lint rule — vitest, axe-core, stylelint, ESLint | A guideline's `checks`, with `role: test`, `lint-rule` or `agent-test` |
+| Why a guideline exists | WCAG, ARIA APG, MDN, an internal RFC | A guideline's `evidence` |
 | Design artifacts | Figma or another design tool | A `refs` entry with `rel: design`, or `metadata.preview` |
-| Distribution | npm, or any package registry | A component's `imports[].package`, or `rel: package` |
+| Distribution | npm, or any package registry | A component's `imports[].package`, or `rel: source` |
 | Editor validation of the DSDS file itself | [JSON Schema](https://json-schema.org/) draft 2020-12 | The document's own `$schema` key |
 | Anything not listed | Any vendor or tool | `$extensions`, keyed by namespace |
 
@@ -72,8 +72,18 @@ sourceFiles:
 
 specs:
   - href: ./contracts/button.contract.json
-    rel: contract
     role: DS Contracts
+```
+
+A `sourceFiles` path starts from the document it's in. When the docs live apart from the code, such as in a separate repository, set `metadata.sourceRoot` on the system entry, and every relative `sourceFiles` path in the project starts there instead:
+
+```yaml
+kind: system
+id: acme-ui
+name: Acme UI
+description: Acme's component library.
+metadata:
+  sourceRoot: ../acme-ui   # a path next to these docs, or a URL
 ```
 
 DSDS does not parse or validate what `specs` points at, so **any** standard contract format works — CEM, [DS Contracts](https://github.com/southleft/ds-contracts-poc), a typedoc or react-docgen dump, something in-house. Name the format in `role` when the file extension doesn't make it obvious.
@@ -84,15 +94,15 @@ CEM is a community project maintained at [webcomponents/custom-elements-manifest
 
 ## Stories — CSF and Storybook
 
-A story is an example, and DSDS treats it as one. The same `rel: storybook` covers hosted docs and the CSF source they're built from — `role` and `note` say which is which:
+A story is an example, and DSDS treats it as one. `rel: demo` covers a live demo of any kind — hosted Storybook docs, the CSF source they're built from, or an equivalent tool — and `role` and `note` say which is which:
 
 ```yaml
 refs:
   - href: https://storybook.org/ds/button
-    rel: storybook
+    rel: demo
     role: hosted docs
   - href: ./stories/button.stories.tsx
-    rel: storybook
+    rel: demo
     role: CSF story source
     note: Component Story Format (CSF3) - the source the hosted docs above are built from.
 ```
@@ -104,7 +114,7 @@ examples:
   - title: Loading state announces itself
     ref:
       href: ./stories/button.stories.tsx#Loading
-      rel: storybook
+      rel: demo
 ```
 
 ## Tests and lint rules
@@ -114,14 +124,14 @@ This is the integration that makes a guideline falsifiable rather than decorativ
 ```yaml
 - level: must
   statement: Every icon-only button MUST have an accessible name.
+  checkedBy: automated
   checks:
     - href: ./tests/button.a11y.test.ts
-      rel: test
-      role: vitest + axe-core
-  checkedBy: automated
+      role: test
+      note: vitest + axe-core
 ```
 
-`rel: lint-rule` is the same idea for a static check (an ESLint or stylelint rule id). Nothing constrains the runner: DSDS names the rule and points at the thing that proves it.
+`checks` holds every way the rule gets checked, and needs no `rel`: the field says it. `role` says which kind of check each one is — `test` for the design system's own test suite, `lint-rule` for a static check (an ESLint or stylelint rule), `agent-test` for an eval that runs an AI agent against the guideline. A checklist step that verifies the rule goes here too, as a `to`. Nothing constrains the runner: DSDS names the check and points at the thing that proves it.
 
 ## Standards and evidence
 
@@ -132,8 +142,10 @@ This is the integration that makes a guideline falsifiable rather than decorativ
   statement: A focus indicator MUST remain visible for keyboard users.
   evidence:
     - href: https://www.w3.org/WAI/WCAG21/Understanding/focus-visible.html
-      rel: external-link
+      role: WCAG 2.2 SC 2.4.7 (AA)
 ```
+
+A pointer in `evidence` needs no `rel` either: everything in it is something the rule cites. A link that's merely worth reading goes in `refs` with `rel: relates-to`.
 
 ## Design tools and packages
 
@@ -142,7 +154,7 @@ refs:
   - href: https://figma.com/file/…/Button
     rel: design
   - href: npm:@org/ds-react
-    rel: package
+    rel: source
 
 imports:
   - platform: react

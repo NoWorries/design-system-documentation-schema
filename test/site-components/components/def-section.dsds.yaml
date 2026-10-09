@@ -16,7 +16,6 @@ sections:
         statement: Use exactly once per schema definition on the Schema page — it renders the eyebrow, type badge, and property list a definition needs. For narrative guide content with no schema definition behind it, use guide-section instead.
         alternatives:
           - to: guide-section
-            rel: alternative-to
         checkedBy: manual
 
   - kind: guidelines
@@ -26,26 +25,25 @@ sections:
         statement: One ds-def-section per schema file, in file order — this is how the Schema page's structure stays a direct, verifiable mirror of schema/**/*.schema.yaml (see check-docs-coverage.mjs, which asserts one real element per definition).
         checks:
           - href: ../../../scripts/checks/check-docs-coverage.mjs
-            rel: test
+            role: test
         checkedBy: automated
       - level: should
         statement: The heading block (eyebrow + name) sticks to the viewport top while its own content scrolls past — a long property list stays anchored to the definition it belongs to instead of scrolling out of context.
         checkedBy: manual
 
-refs:
+
+
+uses:
   - to: prop-list
-    rel: composes
     note: The property list for this definition.
   - to: code
-    rel: composes
     note: The worked-example code block, when layout="split".
   - to: badge
-    rel: composes
     note: The type badge shown next to the heading.
   - to: type-ref
-    rel: composes
     note: Cross-references to other definitions inside the description/prop text.
-
+  - to: cross-refs
+    note: Used below a definition's own description to list related definitions.
 
 sourceFiles:
   - platform: web-component
@@ -64,7 +62,6 @@ imports:
         <ds-prop-table slot="props">...</ds-prop-table>
         <ds-code slot="example" language="yaml">...</ds-code>
       </ds-def-section>
-
 traits:
   - traitType: variant
     kind: boolean

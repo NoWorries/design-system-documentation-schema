@@ -4,7 +4,7 @@
 # points at the document that owns the entries it builds on via an
 # ordinary `refs` entry (rel: file), the same pointer type used
 # everywhere else.
-schemaVersion: "0.21.2"
+schemaVersion: "0.22.0"
 
 name: Acme Design System
 
@@ -24,7 +24,6 @@ entries:
             statement: Use when space is tight and the icon is widely recognized on its own.
             alternatives:
               - to: button
-                rel: alternative-to
 
       - kind: guidelines
         for: all
@@ -33,11 +32,13 @@ entries:
             statement: Icon button MUST carry an aria-label, since it has no visible text label.
             # assisted: axe's button-name rule flags a missing accessible name.
             checkedBy: assisted
-    refs:
-      - to: button
-        rel: part-of
+    uses:
       - to: color.action.primary
-        rel: depends-on
+    extends:
+      # An icon button inherits a button's behavior. Before 0.22.0 this
+      # said `part-of` - but a flipped `part-of` would mean the core
+      # button uses this one, and an extension can't edit the core anyway.
+      - to: button
 
 refs:
   - href: ./starter-kit.dsds.yaml

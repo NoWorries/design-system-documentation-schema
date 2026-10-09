@@ -20,11 +20,8 @@ sections:
 
 extends:
   - to: light
-    rel: extends
-
-refs:
-  - href: tokens/dark.tokens.json
-    rel: file
-    note: DTCG source for this theme's token overrides - the specific tokens that differ from `light` are whichever this file redeclares.
 
 colorScheme: dark
+source:
+  href: tokens/dark.tokens.json
+  note: DTCG source for this theme's token overrides - the specific tokens that differ from `light` are whichever this file redeclares.

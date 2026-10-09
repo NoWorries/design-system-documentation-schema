@@ -9,9 +9,9 @@
  * tooling reads the order out of the schema so it can't be wrong. It couldn't be wrong; the
  * list next to it could, and was.
  *
- * These are the same lists `declaredProps` hands to DSDS-17, DSDS-20 and DSDS-22, and the same
- * ones the Schema page's property tables are built from. Now they're also the ones AGENTS.md
- * prints, so an agent that learns the envelope here writes the order the linter checks.
+ * These are the same lists `declaredProps` hands to dsds-format (scripts/format/format.js), and
+ * the same ones the Schema page's property tables are built from. Now they're also the ones
+ * AGENTS.md prints, so an agent that learns the envelope here writes the order dsds-format applies.
  *
  * Usage:
  *   node scripts/generate/sync-envelopes.mjs           # rewrite the blocks

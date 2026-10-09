@@ -19,7 +19,6 @@ sections:
         statement: Don't build a destructive-action confirmation from a bare dialog - use the confirmation dialog pattern, which already names the consequence.
         alternatives:
           - to: confirmation-dialog
-            rel: alternative-to
 
   - kind: guidelines
     for: all

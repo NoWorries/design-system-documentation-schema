@@ -17,7 +17,6 @@ sections:
         statement: Use link when the action navigates somewhere; use button for in-page actions and state changes.
         alternatives:
           - to: button
-            rel: alternative-to
         checkedBy: manual
 
   - kind: guidelines
@@ -27,7 +26,6 @@ sections:
         statement: Always pair link color with an underline for inline links within body text.
         evidence:
           - href: https://www.w3.org/WAI/WCAG21/Understanding/use-of-color.html
-            rel: external-link
         # assisted: axe's link-in-text-block rule flags inline links
         # distinguished by color alone; a person confirms the fix.
         checkedBy: assisted

@@ -2,7 +2,7 @@
 name: dsds-update
 description: Update an existing DSDS spec based on implementation changes, Figma updates, or written instructions. Triggers on "update spec", "modify spec", "add prop to spec", "sync spec", "spec drift".
 metadata:
-  version: 0.21.2
+  version: 0.22.0
 ---
 
 # Update a DSDS Spec
@@ -22,7 +22,7 @@ Modify an existing `.dsds.yaml` file.
 | Change | Location in the document |
 | --- | --- |
 | New prop | `sourceFiles` already points at the real file — no edit needed, unless there's no source file, in which case update the `definitions` section that stands in for the prop list |
-| New API contract | `specs` (top-level, `rel: contract`) — the generated contract document, not the raw source `sourceFiles` names |
+| New API contract | `specs` (top-level, no `rel`: the field says it) — the generated contract document, not the raw source `sourceFiles` names |
 | New variant value | Top-level `traits` item with `traitType: variant` and `kind: enum`, in its `values` array |
 | New state | Top-level `traits` item with `traitType: state` |
 | Anatomy change | The `definitions` section with `context: anatomy` |
@@ -37,21 +37,21 @@ Modify an existing `.dsds.yaml` file.
 - When you add a *new* top-level field, insert it at its
   [style guide](https://designsystemdocspec.org/style-guide)
   position rather than appending it to the end — that guide's whole point is
-  that a reader can rely on the order. Field order never affects validity;
-  `npx dsds-lint` reports a deviation as an advisory warning
-  (`DSDS-17`–`DSDS-23`), never a failure. Follow it because the next
-  reader benefits, not because a tool will block you. Don't reshuffle
-  fields that were already there just to comply; that turns a one-line edit
-  into an unreviewable diff.
+  that a reader can rely on the order. Field order never affects validity.
+  If you're unsure where a field goes, add it anywhere and run
+  `npx dsds-format` on the file: it moves the field to its place and
+  touches nothing else. If the document wasn't formatted before your edit,
+  ask before formatting it — that turns a one-line edit into a diff that
+  reorders the whole file.
 - When adding trait values, place them in logical order (not necessarily alphabetical) — the first value is implied as the default. A value's `id` is the real API name in whatever case the API uses.
 - Update `metadata.status` if the change constitutes a breaking API modification.
-- If adding a new relationship, use `common/ref`'s one form: `{to: "<id>", rel: "<depends-on|extends|alternative-to|composes|...>"}` for something in this document's own graph, or `{href: "<url>", rel: "..."}` for something outside it. A guideline's `checks` takes `rel: test`, `rel: lint-rule`, or `rel: agent-test`.
+- If adding a new relationship, check first whether it has a field of its own: `uses`, `extends` and `alternatives` on an entry; `uses` on a section item; `specs` on a component; `alternatives`, `evidence`, `checks` and `refines` on a guideline; and `replacedBy` inside a deprecated `status`, next to `deprecationNotice`. A pointer there is just `{to: "<id>"}` or `{href: "<url>"}`, with no `rel`. Anything else goes in `refs` as `{to: "<id>", rel: "<same-as|relates-to|...>"}`, or `{href: "<url>", rel: "<file|source|design|demo|relates-to>"}`. A test in `checks` names its kind in `role`: `test`, `lint-rule` or `agent-test`.
 
 ## Schema References
 
 When adding new sections or fields, verify the exact fields:
 
-- **Bundled schema**: `https://designsystemdocspec.org/v0.21.2/dsds.bundled.schema.json` (or `node_modules/design-system-documentation-schema/schema/dsds.bundled.schema.json` if DSDS is installed as a dependency)
+- **Bundled schema**: `https://designsystemdocspec.org/v0.22.0/dsds.bundled.schema.json` (or `node_modules/design-system-documentation-schema/schema/dsds.bundled.schema.json` if DSDS is installed as a dependency)
 - **Section reference**: `/schema/sections-<kind>.md` on this site — for example
   [sections-guidelines.md](https://designsystemdocspec.org/schema/sections-guidelines.md)
 - **Entry reference**: `/schema/entries-<kind>.md` — for example

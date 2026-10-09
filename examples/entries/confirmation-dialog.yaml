@@ -5,7 +5,7 @@ kind: entry
 # is exactly common/showcase.schema.yaml's `code` variant
 # (metadata.preview would use it), and a reference to an external file is
 # exactly a `refs` entry (rel: file) - the same trick a token uses to
-# point at its DTCG file. What's left - `refs` (rel: composes, since this
+# point at its DTCG file. What's left - `uses` (since this
 # is built from other components), a status, and some sections - is just a
 # pattern.
 id: confirmation-dialog
@@ -25,18 +25,15 @@ sections:
         statement: Confirming a destructive, hard-to-reverse action (delete, revoke access).
       - level: should-not
         statement: Confirming a routine save or submit action.
-        refs:
+        alternatives:
           - to: button
-            rel: alternative-to
             note: A routine action doesn't need an interruption; a plain button keeps the flow moving.
 
-refs:
+uses:
   - to: dialog
-    rel: composes
   - to: button
-    rel: composes
   - to: icon
-    rel: composes
+refs:
   - href: ./chunks/confirmation-dialog.tsx
-    rel: file
+    rel: source
     role: React implementation

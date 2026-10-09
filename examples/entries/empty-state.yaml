@@ -21,9 +21,8 @@ sections:
         statement: A list or table has zero results after filtering.
       - level: should-not
         statement: A page fails to load due to a network error.
-        refs:
+        alternatives:
           - to: error-state
-            rel: alternative-to
             note: A load failure is a system error, not an empty result - it needs a retry action, not an empty-state message.
 
   - kind: guidelines
@@ -38,17 +37,13 @@ sections:
     items:
       - title: List loads with zero results
         description: When a filter or search narrows the results to zero, the empty state renders in place of the list, with a heading, body text, and (if applicable) a primary action.
-        refs:
+        uses:
           - to: button
-            rel: depends-on
             role: Clears the filter or starts the relevant action.
       - title: User resolves the empty state
         description: When the user selects the primary action, the triggering condition is resolved and the list re-renders with content.
 
-refs:
+uses:
   - to: icon
-    rel: composes
   - to: button
-    rel: composes
   - to: spacing-scale
-    rel: depends-on

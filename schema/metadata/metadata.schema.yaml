@@ -1,5 +1,5 @@
 $schema: https://json-schema.org/draft/2020-12/schema
-$id: https://designsystemdocspec.org/v0.21.2/metadata/metadata.schema.yaml
+$id: https://designsystemdocspec.org/v0.22.0/metadata/metadata.schema.yaml
 title: Metadata
 type: object
 description: Optional information about an element.
@@ -19,18 +19,15 @@ $defs:
     description: A plain-text note. MUST NOT contain markup.
     example: Reviewed against the latest Figma file; no changes needed.
 properties:
-  context:
-    type: string
-    description: Why this entry was created, and how and why to use it.
-    example: Introduced to give agents extra information for how to ingest/use an entry.
   origin:
     type: object
     description: How this entry's documentation came to exist, and who or what wrote it.
     $comment: >-
       `method` and `author` both default to the common case
-      (authored, by a human). A one-off exception, like
-      "the accessibility section was reviewed by a
-      person, unlike the rest," belongs as a `note`.
+      (authored, by a human). `method` says how the documentation
+      came to exist; `author` says how much of it a person wrote. A
+      one-off exception, like "the accessibility section was
+      reviewed by a person, unlike the rest," belongs as a `note`.
     properties:
       method:
         type: string
@@ -39,9 +36,16 @@ properties:
         description: How this documentation as a whole came to exist.
       author:
         type: string
-        enum: [human, ai-assisted, ai-generated, machine-assisted, machine-generated]
+        enum: [human, assisted, generated]
         default: human
-        description: Who or what actually wrote the content.
+        description: How much of the content a person wrote.
+        $comment: >-
+          `human`: a person wrote it. `assisted`: a person wrote it with
+          help from a tool or model, and checked the result. `generated`:
+          a tool or model wrote it, and no person has rewritten it.
+          Whether that tool was an AI model or a script is a `method`
+          question (`extracted` is a script reading a source; `generated`
+          is anything else) and can be spelled out in `note`.
       note:
         type: string
         description: Free-text context about the origin, including any exceptions to `method` or `author`.
@@ -103,5 +107,5 @@ properties:
     uniqueItems: true
     example: [actions, button, cta, form-control]
   $extensions:
-    $ref: https://designsystemdocspec.org/v0.21.2/common/extensions.schema.yaml
+    $ref: https://designsystemdocspec.org/v0.22.0/common/extensions.schema.yaml
     description: Escape hatch for tool data scoped to just this entry's metadata, keyed by namespace.

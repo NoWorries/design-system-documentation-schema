@@ -1,19 +1,18 @@
 # expect: DSDS-06
 # rejectedBy: semantic
-schemaVersion: "0.21.2"
-name: Bad Composes Cycle
+# A two-step `uses` cycle: card uses avatar, which uses card.
+schemaVersion: "0.22.0"
+name: Bad Uses Cycle
 entries:
   - kind: component
     id: card
     name: Card
     description: A container component.
-    refs:
+    uses:
       - to: avatar
-        rel: composes
   - kind: component
     id: avatar
     name: Avatar
     description: A user image component.
-    refs:
+    uses:
       - to: card
-        rel: composes

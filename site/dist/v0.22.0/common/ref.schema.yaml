@@ -1,0 +1,228 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://designsystemdocspec.org/v0.22.0/common/ref.schema.yaml
+title: Ref
+description: The one pointer type. "A points to B, and this is what kind of pointer it is."
+$comment: >-
+  The schema's pointer: "A points to B". `rel` says what
+  kind of pointer it is. Dependencies, composition, extension,
+  citations, and every other connection use this pointer with a
+  different `rel`.
+
+  Exactly one of `to` or `href` described B. `to` points inside this
+  document (an entry id, or `entryId#itemId` for one item inside it).
+  `href` points outside it (a file, URL, or package). This is
+  independent of `rel`.
+
+  Two forms. In `refs`, each pointer says what kind it is with `rel`.
+  In a field named for one kind of pointer (`uses`, `extends`,
+  `alternatives`, `evidence`, `checks`, `refines`, `replacedBy`, a
+  component's `specs` and `sourceFiles[].file`, a token's or theme's
+  `source`), the field says it, so a pointer there has no `rel` (see
+  `$defs/target`).
+
+  Only add a new `rel` value if no existing one covers the idea.
+  Otherwise extend that value's description instead.
+
+  A bare string is shorthand for `{href: <string>}`. Bare strings can't
+  be safely read as an internal id. Use the full object when the target
+  is internal or an external link needs more description.
+oneOf:
+  - type: string
+    format: uri-reference
+    description: "Shorthand for an external link that doesn't need added definition. Equivalent to `{href: <string>}`."
+    example: https://storybook.org/ds/button
+  - type: object
+    required: [rel]
+    oneOf:
+      - required: [to]
+      - required: [href]
+    properties:
+      to:
+        $ref: "#/$defs/to"
+      href:
+        $ref: "#/$defs/href"
+      rel:
+        $ref: "#/$defs/rel"
+      role:
+        $ref: "#/$defs/role"
+      note:
+        $ref: "#/$defs/note"
+    additionalProperties: false
+$defs:
+  to:
+    type: string
+    pattern: '^[A-Za-z0-9_$]+(-[A-Za-z0-9_$]+)*([./][A-Za-z0-9_$]+(-[A-Za-z0-9_$]+)*)*(#[A-Za-z0-9_$]+(-[A-Za-z0-9_$]+)*(\.[A-Za-z0-9_$]+(-[A-Za-z0-9_$]+)*)*)?$'
+    description: What this points at, inside this document's own graph.
+    $comment: >-
+      A bare id points at a whole entry. Add `#itemId` (ex:
+      `shared-a11y#focus-visible`) to point at one item inside it. A
+      component's trait value is addressed as `#traitId.valueId` (ex:
+      `button#variant.primary`), the same form a combo uses, and a
+      whole trait as `#traitId`. The item half accepts a trait id's
+      casing (`button#isDisabled`). The entry half accepts a token id's
+      looser form too (see common/id.schema.yaml's tokenId), slashes
+      and mixed case included, since `to` can target a token entry.
+
+      This pattern only checks the target is *shaped* like an id (or
+      id#itemId) - not that it actually exists. It catches a value with
+      a space in it with no other file needed. It does *not* catch a
+      capitalized display name like `to: Button`: the entry half accepts
+      a token id's casing, since a design tool's own name (`Color/Action/Primary`)
+      is the real id. Whether the target actually resolves is a separate,
+      resolution-level check: DSDS-08 for a bare id, DSDS-05 for the
+      #itemId form. How an address finds its target is in the processing
+      model, section 2.
+    example: "shared-a11y#focus-visible"
+  href:
+    type: string
+    format: uri-reference
+    description: What this points at, outside this document. Such as a file, URL, or package.
+    $comment: A URI. Can be a relative path (`./tests/button.a11y.test.ts`) or a pseudo-scheme like `npm:@org/ds-react`.
+    example: ./tests/button.a11y.test.ts
+  role:
+    type: string
+    description: What the thing being pointed at does in this context.
+    $comment: In a guideline's `checks`, say what kind of check it is - `test`, `lint-rule` or `agent-test` - so a reader can tell them apart.
+    example: hosted docs
+  note:
+    type: string
+    description: Additional info related to the connection of the two items.
+    example: Component Story Format (CSF3) - the source the hosted docs above are built from.
+  rel:
+    oneOf:
+      - type: string
+        enum: [same-as, file, source, design, demo, relates-to, uses, extends, alternative-to, replaced-by, cites, checked-by, contract, refines]
+      - $ref: https://designsystemdocspec.org/v0.22.0/common/id.schema.yaml#/$defs/namespaced
+    description: >-
+      What kind of pointer this is, or a namespaced custom value. A
+      relationship is written once, on its source. A conforming
+      consumer derives the reverse direction and MUST NOT require it
+      to be written on the target as well. Where an object has a field
+      named for a kind of pointer, that kind MUST go in the field, not in
+      `refs` (DSDS-25).
+    $comment: >-
+      Fourteen values. The first six are written in `refs`, with `rel`.
+      The other eight each have a field of their own, and a pointer in that
+      field doesn't repeat its `rel`. Each line below says what the value
+      means, which end it's written on, and how it reads from the other
+      end. The processing model (section 5) has the same table with what
+      a consumer does with each.
+
+      Written in `refs`:
+
+      `same-as` - this item reuses another item's content instead of
+      restating it. On a section item, pointing at an item of the same
+      kind (`shared-a11y#focus-visible`); the item can leave out its own
+      text. Reads "reused by". Different from `refines`, which states a
+      sharper rule for an agent.
+
+      `file` - another DSDS document in the same project. On a base
+      document or an entry; a consumer reads the target as part of the
+      project. Only DSDS documents: a code file or a DTCG token file is
+      `source`.
+
+      `source` - where this is implemented: a repository, a source file,
+      a DTCG token file, or a package (`npm:@acme/ui`). Covers what
+      `package` said before 0.22.0, and what `file` said for a code or
+      token file. Three fields imply it, with no `rel`: a token's or
+      theme's `source`, and the `file` in a component's `sourceFiles`,
+      which tools extract an API from.
+
+      `design` - the design file this comes from, like a Figma component.
+
+      `demo` - a live demo of this: a Storybook story, or any equivalent.
+      Covers what `storybook` said before 0.22.0.
+
+      `relates-to` - worth reading alongside this, when nothing else fits.
+      Reads the same from both ends. Covers `see-also`, and what
+      `pairs-with` and `excludes` said (a rule about combining two things
+      is a combo, which has a `level`). A guideline item with no
+      `statement` and a `relates-to` ref with an `href` says "this rule
+      is tracked over there", covering what `external-link` did.
+
+      Each written by its own field:
+
+      `uses` - the `uses` field on an entry or a section item: the source
+      is built from the target, needs it, or follows it. A dialog uses its
+      button; a button uses a color token, and the pattern it follows. If
+      the target changes, the source may be affected. Reads "used by".
+      Covers what `composes`, `depends-on`, `part-of` and `implements`
+      said before 0.22.0. Not for "worth reading too" - that's
+      `relates-to`.
+
+      `replaced-by` - the `replacedBy` field in a deprecated `status`, on
+      an entry, trait or trait value, next to its `deprecationNotice`:
+      the target replaces this. Several successors means several
+      pointers; the notice says when to choose which. Reads "replaces".
+
+
+      `extends` - an entry's `extends` field: this inherits from the
+      target, like a dark theme from a light one. Reads "extended by". A
+      consumer never merges the target's content in (processing model
+      section 6).
+
+      `alternative-to` - the `alternatives` field on an entry or a
+      guideline item: use the target instead, in the situation the entry
+      or rule describes. Reads the same from both ends.
+
+      `cites` - a guideline's `evidence` field: the outside standard
+      behind the rule, like a WCAG criterion. Covers what
+      `external-link` said in `evidence`. Not for a link that merely
+      relates; use `relates-to`.
+
+      `checked-by` - a guideline's `checks` field: what verifies the
+      rule. A test, a lint rule or an agent eval (an `href`, with `role`
+      saying which), or a checklist step (a `to`). Reads "checks". Covers
+      what `test`, `lint-rule` and `agent-test` said, and replaces a
+      step's own `checks` field, which pointed the other way. An agent
+      eval's result is often a pass rate rather than pass/fail, so it
+      more often backs `checkedBy: assisted` than `automated`.
+
+      `contract` - a component's `specs` field: an already-generated,
+      machine-readable API contract (a Custom Elements Manifest, DS
+      Contracts, and so on). DSDS points at it and doesn't read it.
+
+      `refines` - a guideline's `refines` field, on a `for: agent` item:
+      this sharpens the target, a human-facing rule, for an agent. An
+      agent applies both. Reads "refined by".
+
+      Namespaced custom values (ex: "acme.supersedes") are allowed too.
+      A consumer that doesn't understand one may ignore it.
+    example: relates-to
+  list:
+    type: array
+    minItems: 1
+    description: One or more pointers, in order, each with its own `rel`.
+    $comment: The general-purpose `refs` list.
+    items:
+      $ref: https://designsystemdocspec.org/v0.22.0/common/ref.schema.yaml
+  target:
+    description: >-
+      A pointer in a field named for one kind of pointer, so it has no
+      `rel`: the field says what kind it is. A bare string is shorthand
+      for `{href: <string>}`.
+    oneOf:
+      - type: string
+        format: uri-reference
+        description: "Shorthand for an outside link. Equivalent to `{href: <string>}`."
+        example: https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html
+      - type: object
+        oneOf:
+          - required: [to]
+          - required: [href]
+        properties:
+          to:
+            $ref: "#/$defs/to"
+          href:
+            $ref: "#/$defs/href"
+          role:
+            $ref: "#/$defs/role"
+          note:
+            $ref: "#/$defs/note"
+        additionalProperties: false
+  targets:
+    type: array
+    minItems: 1
+    description: One or more pointers of the kind the field is named for, in order.
+    items:
+      $ref: "#/$defs/target"

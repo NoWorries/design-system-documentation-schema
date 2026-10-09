@@ -6,7 +6,7 @@ description: This is the description of the class
 metadata:
   origin:
     method: generated
-    author: machine-generated
+    author: generated
     note: Generated from custom-elements.json (CEM schemaVersion 2.1.0) by cem-to-dsds. Usage guidance has not been authored yet.
 
 refs:
@@ -14,7 +14,7 @@ refs:
     rel: file
     role: Custom Elements Manifest
   - href: https://example.com/my-project/README.md
-    rel: external-link
+    rel: relates-to
     role: README
 
 sourceFiles:

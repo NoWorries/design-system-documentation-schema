@@ -241,14 +241,17 @@ if (fs.existsSync(CONFORMANCE_RULES)) {
   }
 }
 
-// A skill that cites any DSDS-XX id should, somewhere, cite the catalog's actual current top
-// id - checks the file's own HIGHEST mention, not every range individually, since a skill can
-// legitimately cite a sub-range for one tier alone as long as its overall top mention keeps up.
+// A skill that describes the whole catalog - a range starting at DSDS-01 - should end that
+// range at the catalog's actual current top id, so it can't cite a stale rule count. Checks the
+// file's own HIGHEST mention. A skill that only cites one tier (`DSDS-12`-`DSDS-21`, the advisory
+// rules) isn't describing the catalog, so it isn't held to its newest id.
 const RULE_ID_MENTION_REGEX = /DSDS-(\d+)/g;
+const WHOLE_CATALOG_REGEX = /DSDS-01`?\s*(?:–|—|-|through|to)\s*`?DSDS-\d+/;
 if (highestRealRuleId) {
   const highestRealN = Number(highestRealRuleId.slice(5));
   for (const file of skillFiles) {
     const text = fs.readFileSync(file, "utf-8");
+    if (!WHOLE_CATALOG_REGEX.test(text)) continue;
     const mentioned = [...text.matchAll(RULE_ID_MENTION_REGEX)].map((m) => Number(m[1]));
     if (mentioned.length === 0) continue;
     const highestMentioned = Math.max(...mentioned);

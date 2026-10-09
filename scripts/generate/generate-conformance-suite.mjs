@@ -26,6 +26,27 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..", "..");
 const FIXTURES_DIR = path.join(ROOT, "examples", "invalid");
 const MANIFEST_PATH = path.join(ROOT, "schema", "conformance-suite.json");
+const VECTORS_DIR = path.join(ROOT, "examples", "vectors");
+
+// Consumer test vectors (scripts/resolve/vectors.js): one folder per vector, every .yaml in it
+// one project, expected.json what a conforming consumer works out from it.
+function buildVectors() {
+  if (!fs.existsSync(VECTORS_DIR)) return [];
+  return fs
+    .readdirSync(VECTORS_DIR, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .sort()
+    .map((name) => ({
+      name,
+      inputs: fs
+        .readdirSync(path.join(VECTORS_DIR, name))
+        .filter((f) => /\.ya?ml$/.test(f))
+        .sort()
+        .map((f) => `examples/vectors/${name}/${f}`),
+      expected: `examples/vectors/${name}/expected.json`,
+    }));
+}
 
 // Mirrors conformance-test.js's own leadingComment()/expectedIds(). Kept as an independent
 // reader rather than importing that file, since it runs its checks as side effects at module
@@ -69,6 +90,7 @@ function buildManifest() {
     };
   });
 
+  const vectors = buildVectors();
   return {
     schemaVersion: version,
     generatedBy: "scripts/generate/generate-conformance-suite.mjs",
@@ -84,6 +106,15 @@ function buildManifest() {
       "passing result.",
     fixtureCount: fixtures.length,
     fixtures,
+    consumerContract:
+      "For each vector: read every file in inputs as one project, resolve it the way the " +
+      "processing model (https://designsystemdocspec.org/processing) says, and compare the " +
+      "result with the JSON in expected. `entries` and each entry's `items`, `incoming` and " +
+      "`succession` must match exactly. `problems` must match on `code` and `at`; `message` is " +
+      "prose for people and isn't compared. A consumer that implements only part of the model " +
+      "can compare only the fields for the sections it implements, and should say which.",
+    vectorCount: vectors.length,
+    vectors,
   };
 }
 
@@ -99,13 +130,13 @@ function main() {
       );
       process.exit(1);
     }
-    console.log(`✓ Conformance suite manifest is up to date (${manifest.fixtureCount} fixtures).`);
+    console.log(`✓ Conformance suite manifest is up to date (${manifest.fixtureCount} fixtures, ${manifest.vectorCount} vectors).`);
     return;
   }
 
   fs.writeFileSync(MANIFEST_PATH, generated, "utf-8");
   console.log(
-    `✓ Conformance suite manifest regenerated (${manifest.fixtureCount} fixtures) at ${path.relative(ROOT, MANIFEST_PATH)}.`,
+    `✓ Conformance suite manifest regenerated (${manifest.fixtureCount} fixtures, ${manifest.vectorCount} vectors) at ${path.relative(ROOT, MANIFEST_PATH)}.`,
   );
 }
 

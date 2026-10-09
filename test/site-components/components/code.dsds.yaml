@@ -27,16 +27,6 @@ sections:
         statement: Use for anything meant to be read or copied as code — commands, config, API examples. Use inline for a short reference inside a sentence; use block (the default) for a standalone sample.
         checkedBy: manual
 
-refs:
-  - to: header
-    rel: part-of
-    note: Rendered inline for the "Source:" line and for backtick spans in a header's description.
-  - to: guide-section
-    rel: part-of
-    note: Slotted into "example" as the right-hand column's worked example.
-  - to: def-section
-    rel: part-of
-    note: Slotted into "example" on a layout=split definition.
 
 
 sourceFiles:
@@ -45,7 +35,7 @@ sourceFiles:
 
 imports:
   - platform: web-component
-    code: '<ds-code language="yaml">schemaVersion: "0.21.2"</ds-code>'
+    code: '<ds-code language="yaml">schemaVersion: "0.22.0"</ds-code>'
 
 traits:
   - traitType: variant

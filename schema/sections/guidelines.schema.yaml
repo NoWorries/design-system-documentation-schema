@@ -1,5 +1,5 @@
 $schema: https://json-schema.org/draft/2020-12/schema
-$id: https://designsystemdocspec.org/v0.21.2/sections/guidelines.schema.yaml
+$id: https://designsystemdocspec.org/v0.22.0/sections/guidelines.schema.yaml
 title: GuidelinesSection
 description: >-
   Rules for an entry. When and how to use it. Each item pairs a rule with why it
@@ -15,28 +15,30 @@ $comment: >-
   doing) - this one is narrower, just how-to-use vs. when-to-use.
 
   `statement` is required unless the item points somewhere else
-  instead. Use `same-as` for a statement already declared once elsewhere
-  (a shared item, or an item in another entry), or `external-link` for a rule tracked in
-  another system, like a ticket. Both always go in `refs`.
+  instead: a `same-as` ref for a statement already declared once
+  elsewhere (a shared item, or an item in another entry), or a
+  `relates-to` ref with an `href` for a rule tracked in another system,
+  like a ticket. Both go in `refs`.
 
-  `alternatives`, `evidence`, `related`, and `checks` are `refs`
-  lists with a specific name, so a tool can ask "what backs up this
-  guideline" without checking every `refs` entry's `rel`. `refs` itself
-  is the catch-all for anything that doesn't fit those four.
+  `alternatives`, `evidence`, `checks` and `refines` are each named for
+  one kind of pointer, so a pointer in them has no `rel` - the field
+  says it (`alternative-to`, `cites`, `checked-by`, `refines`). A tool
+  asking "what backs up this guideline" reads `evidence`. `refs` is the
+  catch-all for every other kind, each with its own `rel`.
 
   `checkedBy` says what type of verification is used, not what does the
-  checking. Point `checks` (rel: test, lint-rule, or agent-test) at the
-  actual test, lint rule, or agent eval. `example` always matches
-  `level`, so there's no need for a separate pass/fail flag.
+  checking. `checks` points at the actual test, lint rule, agent eval,
+  or checklist step. `example` always matches `level`, so there's no
+  need for a separate pass/fail flag.
 
-  An `external-link` item with no `statement` (just `level` plus the
-  `refs` entry) is intentional, not a gap: it says "this rule exists,
+  An item with no `statement` and a `relates-to` link (just `level` plus
+  the `refs` entry) is intentional, not a gap: it says "this rule exists,
   at this strictness, tracked in another system" without restating text
-  that lives there. It's unreadable on its own—a reader will have to
+  that lives there. It's unreadable on its own - a reader will have to
   follow the link to access the rule.
 
 allOf:
-  - $ref: https://designsystemdocspec.org/v0.21.2/sections/section.schema.yaml
+  - $ref: https://designsystemdocspec.org/v0.22.0/sections/section.schema.yaml
   - type: object
     properties:
       kind:
@@ -66,11 +68,17 @@ allOf:
                   properties:
                     refs:
                       contains:
-                        type: object
-                        required: [rel]
-                        properties:
-                          rel:
-                            enum: [same-as, external-link]
+                        anyOf:
+                          - type: object
+                            required: [rel, to]
+                            properties:
+                              rel:
+                                const: same-as
+                          - type: object
+                            required: [rel, href]
+                            properties:
+                              rel:
+                                const: relates-to
             # `level` is required only when the item states its own rule. An
             # item that points elsewhere via `refs` takes the target's level
             # and doesn't restate it.
@@ -81,51 +89,49 @@ allOf:
                 required: [level]
           properties:
             id:
-              $ref: https://designsystemdocspec.org/v0.21.2/common/id.schema.yaml
+              $ref: https://designsystemdocspec.org/v0.22.0/common/id.schema.yaml
               description: "A stable id for this guideline, so another item, like an agent-only refinement or a checklist entry, can point at it. `id` is optional, but a conforming consumer MUST derive one from this item's own text."
               $comment: The derivation algorithm is in common/id.schema.yaml's own description.
             level:
-              $ref: https://designsystemdocspec.org/v0.21.2/common/requirement-level.schema.yaml
+              $ref: https://designsystemdocspec.org/v0.22.0/common/requirement-level.schema.yaml
             statement:
-              $ref: https://designsystemdocspec.org/v0.21.2/common/markdown.schema.yaml
+              $ref: https://designsystemdocspec.org/v0.22.0/common/markdown.schema.yaml
               description: An individual, concrete usage rule.
               $comment: >-
                 When the section's framing is when-to-use, this states
                 a user situation. Leave it out only when `refs` carries a
-                same-as or external-link pointer instead (see the file
-                comment above).
+                same-as pointer, or a relates-to link, instead (see the
+                file comment above).
               example: Limit each surface to one primary button.
             example:
-              $ref: https://designsystemdocspec.org/v0.21.2/common/example.schema.yaml
+              $ref: https://designsystemdocspec.org/v0.22.0/common/example.schema.yaml
               description: "An example illustrating this rule. It MUST reflect `level`. A `must-not` item's example MUST show what not to do."
               $comment: Matching `level` is why there's no separate pass/fail flag on an example.
             alternatives:
-              $ref: https://designsystemdocspec.org/v0.21.2/common/ref.schema.yaml#/$defs/list
-              description: "Pointers from this guideline to a better-suited alternative when this is a fit judgment."
+              $ref: https://designsystemdocspec.org/v0.22.0/common/ref.schema.yaml#/$defs/targets
+              description: "What to use instead, when this is a fit judgment (alternative-to). No `rel`: this field says it."
               example:
                 - to: link
-                  rel: alternative-to
             evidence:
-              $ref: https://designsystemdocspec.org/v0.21.2/common/ref.schema.yaml#/$defs/list
-              description: "Pointers from this guideline to an outside standard this rule follows, like WCAG or MDN."
+              $ref: https://designsystemdocspec.org/v0.22.0/common/ref.schema.yaml#/$defs/targets
+              description: "The outside standard this rule follows, like a WCAG criterion or MDN (cites). No `rel`: this field says it."
               example:
                 - href: https://www.w3.org/WAI/WCAG21/Understanding/focus-visible.html
-                  rel: external-link
+                  role: WCAG 2.2 SC 2.4.7 (AA)
             checks:
-              $ref: https://designsystemdocspec.org/v0.21.2/common/ref.schema.yaml#/$defs/list
-              description: "Pointers from this guideline to the lint rule, test, or agent eval that proves it (rel: test, rel: lint-rule, rel: agent-test - ex: a promptfoo config)."
+              $ref: https://designsystemdocspec.org/v0.22.0/common/ref.schema.yaml#/$defs/targets
+              description: "What verifies this rule (checked-by): a test, lint rule or agent eval (an `href`, with `role` saying which), or a checklist step (a `to`). No `rel`: this field says it."
               example:
                 - href: ./tests/button.a11y.test.ts
-                  rel: test
+                  role: test
             checkedBy:
               type: string
               enum: [automated, assisted, manual]
               description: How this rule is verified.
               $comment: >-
                 `automated`: a tool checks this on its own. Point
-                `checks` (rel: test, lint-rule, agent-test - ex: a
-                promptfoo config) at the real tool that's doing the
-                checking.
+                `checks` at the real test, lint rule or agent eval (ex:
+                a promptfoo config) doing the checking (DSDS-03).
 
                 `assisted`: a tool flags likely cases, but a person
                 makes the call.
@@ -140,21 +146,26 @@ allOf:
               minItems: 1
               uniqueItems: true
               example: [accessibility, focus]
-            related:
-              $ref: https://designsystemdocspec.org/v0.21.2/common/ref.schema.yaml#/$defs/list
-              description: Pointers from this guideline to agent-only refinements pointing at the human rule it amends.
+            refines:
+              $ref: https://designsystemdocspec.org/v0.22.0/common/ref.schema.yaml#/$defs/targets
+              description: "On a `for: agent` item: the human-facing rule this one sharpens for an agent (refines). No `rel`: this field says it."
+              $comment: Written on the agent rule, pointing at the human one, so the human-facing rule never has to know it's been refined. A consumer reading for an agent applies both.
               example:
                 - to: "button#loading-announcement"
-                  rel: refines
+            uses:
+              $ref: https://designsystemdocspec.org/v0.22.0/common/ref.schema.yaml#/$defs/targets
+              description: "Entries this item is about or needs, like the components a step involves (uses). No `rel`: this field says it."
+              example:
+                - to: button
             refs:
-              $ref: https://designsystemdocspec.org/v0.21.2/common/ref.schema.yaml#/$defs/list
-              description: The general-purpose fallback for any pointer that doesn't fit `alternatives`/`evidence`/`related`/`checks`.
-              $comment: "Includes rel: same-as and rel: external-link, which point at where the rule is really stated, instead of here (see `statement`'s own $comment)."
+              $ref: https://designsystemdocspec.org/v0.22.0/common/ref.schema.yaml#/$defs/list
+              description: Every other pointer from this guideline, each with its own `rel`.
+              $comment: "Includes rel: same-as, and rel: relates-to with an href, which point at where the rule is really stated instead of here (see `statement`'s own $comment)."
               example:
                 - to: "shared-a11y#focus-visible"
                   rel: same-as
             $extensions:
-              $ref: https://designsystemdocspec.org/v0.21.2/common/extensions.schema.yaml
+              $ref: https://designsystemdocspec.org/v0.22.0/common/extensions.schema.yaml
               description: Escape hatch for tool data scoped to just this one guideline, keyed by namespace.
               $comment: >-
                 A custom `kind` (ex: "acme.rule") can add its own typed

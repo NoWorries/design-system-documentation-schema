@@ -9,9 +9,9 @@
 # 0.20.0 has no `token-group`/nested-children concept (that model flattened to
 # top-level entries — see the CHANGELOG's 0.20.0 entry), so the alias
 # relationship nested-color.tokens.json's own `$value` expresses structurally
-# is restated here as an explicit `depends-on` ref between two flat token
+# is restated here as an explicit `uses` ref between two flat token
 # entries instead of a parent/child tree.
-schemaVersion: "0.21.2"
+schemaVersion: "0.22.0"
 
 name: Nested Color Tokens
 
@@ -40,9 +40,8 @@ entries:
         items:
           - level: should
             statement: Use for at most one action per surface — two competing primary actions split the user's attention and dilute the visual hierarchy the color exists to create.
-    refs:
+    uses:
       - to: color.palette.blue-500
-        rel: depends-on
         note: Resolves its value from this primitive via the DTCG file's own alias syntax, not a separate DSDS-level indirection.
     tokenType: color
     source: ./nested-color.tokens.json
@@ -51,9 +50,8 @@ entries:
     id: color.action.primary-hover
     name: Action Primary Hover
     description: Hover state for the primary action background.
-    refs:
+    uses:
       - to: color.palette.blue-600
-        rel: depends-on
         note: Resolves its value from this primitive via the DTCG file's own alias syntax.
     tokenType: color
     source: ./nested-color.tokens.json
