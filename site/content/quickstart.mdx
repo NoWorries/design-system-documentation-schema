@@ -130,7 +130,7 @@ metadata:
 
 Structured docs live in the `sections` array on each entry. Each section has a `kind` field naming its type — `guidelines`, `definitions`, `steps`, or the generic `section`. Any entry kind can use any section kind; nothing restricts which section kinds go with which entry kind.
 
-Every section also carries a `for` field (`human`, `agent`, or `all`) naming its audience — see [Humans and agents on the Overview page](index.html#humans-and-agents).
+Every section also carries a `for` field (`human`, `agent`, or `all`) naming its audience — see [For humans and agents on the Overview page](index.html#for-humans-and-agents).
 
 </ds-guide-section>
 
@@ -335,6 +335,8 @@ A lot of design system documentation covers the same topics—and you shouldn't 
 The target can be an item in the base document's `shared` array, or an item in any entry. Use `shared` when the content doesn't fit in any single entry:
 
 <ds-example file="quickstart/12-shared-sections.yaml" slot="example" />
+
+The button's accessibility section uses `tags: [accessibility]` to identify its topic for conforming consumers, while its `same-as` pointer supplies the shared rule. Keep unrelated guidance in a separate section. The tag identifies documentation; it does not mean the component has passed an accessibility audit. Use `checks` and `checkedBy` on the rule to describe how it is verified.
 
 </ds-guide-section>
 
