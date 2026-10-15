@@ -230,6 +230,17 @@ A ref answers what it points at before what kind of pointer it is. That's the or
 3. **`role`:** What does the thing being pointed at do here?
 4. **`note`:** Anything else worth saying about the connection.
 
+### Inline links: a pointer for a relationship, a link for a mention
+
+When prose mentions another part of the system, link to it instead of writing its id in backticks. A validator checks a `dsds:` link; it can't check `` `button#variant.primary` ``.
+
+- **`<dsds:button>`** for a named thing: an entry, a definition, a step, or a trait or value with a `name`. The text comes from the target, so it stays right after a rename.
+- **`[keep the focus ring visible](dsds:shared-a11y#focus-visible)`** for a guideline, which has no short name, and anywhere the sentence needs its own words.
+- **Give a link's target its own `id`, and don't change it.** An item without one is addressed by a slug of its text, so rewording the rule breaks every link to it. Rename by changing `name`, never `id`. For something that gets renamed often, or that other tools link to, a lowercase UUID makes a good `id`; `<dsds:…>` still shows its `name`.
+- **A link isn't a relationship.** If the entry depends on the thing it mentions, say so in `uses` too. A tool answering "what does changing this affect?" reads pointers, not prose.
+
+This is about reading order, not field order, so `dsds-format` doesn't apply it.
+
 ---
 
 ## 7. A complete example
