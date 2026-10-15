@@ -342,6 +342,21 @@ The button's accessibility section uses `tags: [accessibility]` to identify its 
 
 <ds-guide-section>
 
+### Linking from prose
+
+When a description or a rule mentions another part of the system, link to it with a `dsds:` link instead of writing its id in backticks. The part after `dsds:` is written exactly like a `to`. The validator checks it, so a mention of something that doesn't exist gets caught.
+
+- `<dsds:order-confirmation>` shows the target's own name, "Order Confirmation", and stays right if it's renamed.
+- `[names what's being ordered](dsds:order-confirmation#name-the-order)` shows your own words. Use this form for a guideline, which has no short name.
+
+<ds-example file="quickstart/13-inline-links.yaml" slot="example" />
+
+A link only mentions something. If the entry depends on what it mentions, say so with `uses` as well, as the button does here. Tools read pointers, not prose, to work out what a change affects.
+
+</ds-guide-section>
+
+<ds-guide-section>
+
 ## Validate your document
 
 ### Using the bundled schema
