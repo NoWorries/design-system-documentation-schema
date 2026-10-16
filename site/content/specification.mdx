@@ -86,6 +86,8 @@ A lowercase UUID fits this shape, so an entry's or an item's `id` MAY be one, li
 
 When a stable machine key is needed alongside a readable ref target, an entry SHOULD use a readable `id` and `metadata.uuid`. A lowercase UUID as `id` remains valid. `metadata.uuid` is independent of `id` and `name`, and is not a ref target; `to:` refs continue to use `id`. Like a published `id`, `metadata.uuid` SHOULD NOT change once published.
 
+For an example, see [`xui.header-and-in-page-navigation`](/examples/entries/header-and-in-page-navigation.yaml).
+
 Whatever its form, an `id` SHOULD NOT change once a document using it is published, since every pointer and inline link to it would break. Change `name` instead. If an entry's `id` has to change, keep the old entry as a deprecated stub whose `replacedBy` names the new one, so consumers can follow it (processing model §7). A validator sees one version of a document, so it can't check this; a project that needs the guarantee checks it in its own CI, by comparing ids with the version before.
 
 ### 3.2 Item ids and addresses
