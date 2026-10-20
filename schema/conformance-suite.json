@@ -257,13 +257,6 @@
       "kind": "system"
     },
     {
-      "file": "examples/invalid/schema-metadata-uuid-pattern.yaml",
-      "rejectedBy": "schema",
-      "expect": [],
-      "errorAt": "/metadata/uuid",
-      "kind": "component"
-    },
-    {
       "file": "examples/invalid/schema-named-field-rel.yaml",
       "rejectedBy": "schema",
       "expect": [],
@@ -324,6 +317,13 @@
       "rejectedBy": "schema",
       "expect": [],
       "errorAt": null,
+      "kind": "component"
+    },
+    {
+      "file": "examples/invalid/schema-uuid-pattern.yaml",
+      "rejectedBy": "schema",
+      "expect": [],
+      "errorAt": "/uuid",
       "kind": "component"
     }
   ],

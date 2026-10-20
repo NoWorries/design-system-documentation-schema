@@ -65,7 +65,7 @@ properties:
   uuid:
     type: string
     pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-    description: A stable machine identifier for this entry, independent of its readable `id` and `name`.
+    description: A stable machine identifier for this entry, independent of its readable `id` and `name`. It SHOULD NOT change once published.
     $comment: >-
       Sits beside `id` and `name` because it is stable identity, not descriptive
       metadata. Use it when a consumer or external system needs a single value
@@ -73,7 +73,7 @@ properties:
       a `to:` pointer still names the entry by its readable `id`. Keep it on the
       entry itself, not under `metadata`, because it is part of the entry's own
       identity. A lowercase UUID remains valid; uppercase and other non-matching
-      values are rejected. It SHOULD NOT change once published.
+      values are rejected.
     example: 550e8400-e29b-41d4-a716-446655440000
   description:
     $ref: https://designsystemdocspec.org/v0.23.0/common/markdown.schema.yaml
