@@ -6,7 +6,7 @@ All notable changes to the DSDS specification are documented in this file.
 
 ## [0.23.1] — 2026-10-17
 
-- Add optional top-level `uuid` as a lowercase, version-unrestricted stable identifier, separate from readable `id` refs.
+- Add optional entry `uuid` for stable external identification; refs still use `id`. (Josh Harwood)
 
 ## [0.23.0] — 2026-10-13
 
